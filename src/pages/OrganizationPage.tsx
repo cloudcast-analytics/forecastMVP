@@ -249,7 +249,7 @@ export default function OrganizationPage() {
                 <div className="bg-slate-50 border-t border-slate-100">
                   {deptRoles.map(role => (
                     <div
-                      key={role.id}
+                      key={`${role.id}-${selectedLocation?.id ?? 'none'}`}
                       className="flex items-center gap-3 pl-12 pr-4 py-2.5 border-t border-slate-100 first:border-t-0"
                     >
                       <span className="flex-1 text-sm text-slate-700">{role.name}</span>
