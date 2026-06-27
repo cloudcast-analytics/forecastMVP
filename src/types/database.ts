@@ -84,3 +84,40 @@ export interface WeatherData {
   weather_condition: string
   source?: string
 }
+
+export interface Department {
+  id: string
+  company_id: string
+  name: string
+  created_at: string
+}
+
+export interface Role {
+  id: string
+  department_id: string
+  name: string
+  created_at: string
+}
+
+export interface LocationDepartment {
+  id: string
+  location_id: string
+  department_id: string
+  is_active: boolean
+}
+
+export interface LocationRole {
+  id: string
+  location_id: string
+  role_id: string
+  headcount: number
+}
+
+export interface DailyStaffingEvaluation {
+  id: string
+  location_id: string
+  department_id: string
+  date: string
+  rating: 'understaffed' | 'adequate' | 'overstaffed'
+  created_at: string
+}

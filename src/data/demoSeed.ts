@@ -1,4 +1,4 @@
-import type { Company, DailyObservation, Location, StaffingRule } from '../types/database'
+import type { Company, DailyObservation, Department, DailyStaffingEvaluation, Location, LocationDepartment, LocationRole, Role, StaffingRule } from '../types/database'
 import { getWeekNumber, getSeason } from '../lib/utils'
 
 export const DEMO_COMPANY: Company = {
@@ -63,6 +63,42 @@ export const DEMO_STAFFING_RULES: StaffingRule[] = [
     label: 'Zeer druk',
   },
 ]
+
+export const DEMO_DEPARTMENTS: Department[] = [
+  { id: 'dept-keuken', company_id: 'demo-company', name: 'Keuken', created_at: '2025-01-01' },
+  { id: 'dept-zaal',   company_id: 'demo-company', name: 'Zaal',   created_at: '2025-01-01' },
+  { id: 'dept-kassa',  company_id: 'demo-company', name: 'Kassa',  created_at: '2025-01-01' },
+  { id: 'dept-bar',    company_id: 'demo-company', name: 'Bar',    created_at: '2025-01-01' },
+]
+
+export const DEMO_ROLES: Role[] = [
+  { id: 'role-chef',            department_id: 'dept-keuken', name: 'Chef-kok',       created_at: '2025-01-01' },
+  { id: 'role-souschef',        department_id: 'dept-keuken', name: 'Sous-chef',       created_at: '2025-01-01' },
+  { id: 'role-kok',             department_id: 'dept-keuken', name: 'Kok',             created_at: '2025-01-01' },
+  { id: 'role-kelner',          department_id: 'dept-zaal',   name: 'Kelner',          created_at: '2025-01-01' },
+  { id: 'role-gastheer',        department_id: 'dept-zaal',   name: 'Gastheer/vrouw',  created_at: '2025-01-01' },
+  { id: 'role-kassamedewerker', department_id: 'dept-kassa',  name: 'Kassamedewerker', created_at: '2025-01-01' },
+  { id: 'role-barman',          department_id: 'dept-bar',    name: 'Barman',          created_at: '2025-01-01' },
+  { id: 'role-barhulp',         department_id: 'dept-bar',    name: 'Barhulp',         created_at: '2025-01-01' },
+]
+
+export const DEMO_LOCATION_DEPARTMENTS: LocationDepartment[] = [
+  { id: 'ld-keuken', location_id: 'demo-location', department_id: 'dept-keuken', is_active: true  },
+  { id: 'ld-zaal',   location_id: 'demo-location', department_id: 'dept-zaal',   is_active: true  },
+  { id: 'ld-kassa',  location_id: 'demo-location', department_id: 'dept-kassa',  is_active: true  },
+  { id: 'ld-bar',    location_id: 'demo-location', department_id: 'dept-bar',    is_active: false },
+]
+
+export const DEMO_LOCATION_ROLES: LocationRole[] = [
+  { id: 'lr-chef',            location_id: 'demo-location', role_id: 'role-chef',            headcount: 1 },
+  { id: 'lr-souschef',        location_id: 'demo-location', role_id: 'role-souschef',        headcount: 2 },
+  { id: 'lr-kok',             location_id: 'demo-location', role_id: 'role-kok',             headcount: 4 },
+  { id: 'lr-kelner',          location_id: 'demo-location', role_id: 'role-kelner',          headcount: 6 },
+  { id: 'lr-gastheer',        location_id: 'demo-location', role_id: 'role-gastheer',        headcount: 2 },
+  { id: 'lr-kassamedewerker', location_id: 'demo-location', role_id: 'role-kassamedewerker', headcount: 3 },
+]
+
+export const DEMO_STAFFING_EVALUATIONS: DailyStaffingEvaluation[] = []
 
 // Simple seeded pseudo-random — deterministic so data is consistent
 function seededRand(seed: number): number {
