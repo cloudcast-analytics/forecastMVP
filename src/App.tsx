@@ -10,6 +10,7 @@ import DataPage from './pages/DataPage'
 import ForecastPage from './pages/ForecastPage'
 import StaffingPage from './pages/StaffingPage'
 import DataManagementPage from './pages/DataManagementPage'
+import OrganizationPage from './pages/OrganizationPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useApp()
@@ -53,6 +54,10 @@ function AppRoutes() {
       <Route
         path="/settings/data-management"
         element={<ProtectedRoute><DataManagementPage /></ProtectedRoute>}
+      />
+      <Route
+        path="/organization"
+        element={<ProtectedRoute><OrganizationPage /></ProtectedRoute>}
       />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

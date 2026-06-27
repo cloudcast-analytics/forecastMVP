@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   Building2,
+  Building,
   MapPin,
   Upload,
   Database,
@@ -20,6 +21,7 @@ const navItems = [
   { to: '/data',                     label: 'Mijn data',         icon: Database },
   { to: '/forecast',                 label: 'Forecast',          icon: TrendingUp },
   { to: '/staffing',                 label: 'Personeelsregels',  icon: Users },
+  { to: '/organization',             label: 'Organisatie',       icon: Building },
   { to: '/settings/data-management', label: 'Data beheer',       icon: Settings },
 ]
 
