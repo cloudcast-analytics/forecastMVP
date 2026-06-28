@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   Building2,
@@ -12,8 +12,10 @@ import {
   Settings,
   Menu,
   X,
+  LogOut,
 } from 'lucide-react'
 import Sidebar from './Sidebar'
+import { useApp } from '../../context/AppContext'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -33,6 +35,14 @@ const navItems = [
 
 export default function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const { selectedCompany, selectedLocation, setSelectedLocation, locations, logout, currentUser, isDemo } = useApp()
+  const navigate = useNavigate()
+
+  async function handleLogout() {
+    await logout()
+    navigate('/login')
+    setMobileOpen(false)
+  }
 
   return (
     <div
@@ -90,8 +100,75 @@ export default function Layout({ children }: LayoutProps) {
             backdropFilter: 'blur(24px)',
             WebkitBackdropFilter: 'blur(24px)',
             borderRight: '1px solid rgba(255,255,255,0.4)',
+            display: 'flex',
+            flexDirection: 'column',
           }}>
-            <nav style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {/* Bedrijfsblok */}
+            {(selectedCompany || isDemo) && (
+              <div style={{
+                margin: '12px 12px 4px',
+                padding: '10px 12px',
+                borderRadius: '12px',
+                background: 'rgba(26,68,232,0.05)',
+                border: '1px solid rgba(26,68,232,0.1)',
+              }}>
+                <p style={{ fontSize: '11px', color: '#6b7280', marginBottom: '2px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Bedrijf
+                </p>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: '#1a1f36', lineHeight: 1.3 }}>
+                  {selectedCompany?.name ?? 'Waterfront Genk'}
+                </p>
+                {isDemo && (
+                  <span style={{
+                    display: 'inline-block',
+                    marginTop: '4px',
+                    fontSize: '10px',
+                    fontWeight: 600,
+                    background: '#1a44e8',
+                    color: 'white',
+                    padding: '1px 8px',
+                    borderRadius: '99px',
+                    letterSpacing: '0.03em',
+                  }}>
+                    Demo
+                  </span>
+                )}
+                {locations.length === 1 && selectedLocation && (
+                  <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
+                    {selectedLocation.name}
+                  </p>
+                )}
+                {locations.length > 1 && (
+                  <select
+                    value={selectedLocation?.id ?? ''}
+                    onChange={e => {
+                      const loc = locations.find(l => l.id === e.target.value) ?? null
+                      setSelectedLocation(loc)
+                      setMobileOpen(false)
+                    }}
+                    style={{
+                      marginTop: '6px',
+                      width: '100%',
+                      fontSize: '12px',
+                      color: '#1a1f36',
+                      background: 'transparent',
+                      border: 'none',
+                      outline: 'none',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      padding: 0,
+                    }}
+                  >
+                    {locations.map(l => (
+                      <option key={l.id} value={l.id}>{l.name}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
+
+            {/* Navigatie */}
+            <nav style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
               {navItems.map(({ to, label, icon: Icon }) => (
                 <NavLink
                   key={to}
@@ -119,17 +196,44 @@ export default function Layout({ children }: LayoutProps) {
                 </NavLink>
               ))}
             </nav>
+
+            {/* Footer: account + uitloggen */}
+            <div style={{
+              padding: '16px 26px',
+              borderTop: '1px solid rgba(0,0,0,0.06)',
+            }}>
+              {currentUser?.email && (
+                <p style={{ fontSize: '12px', fontWeight: 500, color: '#1a1f36', marginBottom: '4px' }}>
+                  {currentUser.email}
+                </p>
+              )}
+              <button
+                onClick={handleLogout}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: 0,
+                  border: 'none',
+                  background: 'none',
+                  fontSize: '12px',
+                  color: '#6b7280',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                <LogOut size={13} />
+                Uitloggen
+              </button>
+            </div>
           </div>
           <div style={{ flex: 1 }} onClick={() => setMobileOpen(false)} />
         </div>
       )}
 
       {/* Main content */}
-      <main style={{
-        flex: 1,
-        overflow: 'auto',
-        paddingTop: '56px',
-      }}
+      <main
+        style={{ flex: 1, overflow: 'auto', paddingTop: '56px' }}
         className="lg:pt-0"
       >
         <div style={{ padding: '28px', maxWidth: '1200px', margin: '0 auto' }}>
