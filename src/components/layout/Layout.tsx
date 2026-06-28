@@ -25,12 +25,12 @@ const navItems = [
   { to: '/dashboard',                label: 'Dashboard',   icon: LayoutDashboard },
   { to: '/companies',                label: 'Bedrijven',   icon: Building2 },
   { to: '/locations',                label: 'Locaties',    icon: MapPin },
-  { to: '/data/upload',              label: 'Upload',      icon: Upload },
-  { to: '/data',                     label: 'Data',        icon: Database },
-  { to: '/forecast',                 label: 'Forecast',    icon: TrendingUp },
-  { to: '/staffing',                 label: 'Personeel',   icon: Users },
-  { to: '/organization',             label: 'Organisatie', icon: Building },
-  { to: '/settings/data-management', label: 'Beheer',      icon: Settings },
+  { to: '/data/upload',              label: 'Upload data',       icon: Upload },
+  { to: '/data',                     label: 'Mijn data',         icon: Database },
+  { to: '/forecast',                 label: 'Forecast',          icon: TrendingUp },
+  { to: '/staffing',                 label: 'Personeelsregels',  icon: Users },
+  { to: '/organization',             label: 'Organisatie',       icon: Building },
+  { to: '/settings/data-management', label: 'Data beheer',       icon: Settings },
 ]
 
 export default function Layout({ children }: LayoutProps) {
