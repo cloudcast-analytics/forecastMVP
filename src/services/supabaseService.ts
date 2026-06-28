@@ -6,11 +6,15 @@ import {
   DEMO_LOCATION_DEPARTMENTS,
   DEMO_LOCATION_ROLES,
   DEMO_LOCATION,
+  DEMO_LOCATION_2,
   DEMO_ROLES,
   DEMO_STAFFING_EVALUATIONS,
   DEMO_STAFFING_RULES,
   getDemoObservations,
 } from '../data/demoSeed'
+
+// In-memory store for demo uploads — keyed by locationId
+const demoObservationsStore: Record<string, DailyObservation[]> = {}
 
 export async function getCompanies(): Promise<Company[]> {
   if (isDemo) return [DEMO_COMPANY]
@@ -20,7 +24,7 @@ export async function getCompanies(): Promise<Company[]> {
 }
 
 export async function getLocations(companyId: string): Promise<Location[]> {
-  if (isDemo) return [DEMO_LOCATION]
+  if (isDemo) return [DEMO_LOCATION, DEMO_LOCATION_2]
   const { data, error } = await supabase
     .from('locations')
     .select('*')
@@ -31,7 +35,7 @@ export async function getLocations(companyId: string): Promise<Location[]> {
 }
 
 export async function getObservations(locationId: string): Promise<DailyObservation[]> {
-  if (isDemo) return getDemoObservations()
+  if (isDemo) return demoObservationsStore[locationId] ?? getDemoObservations()
   const { data, error } = await supabase
     .from('daily_observations')
     .select('*')
@@ -43,7 +47,11 @@ export async function getObservations(locationId: string): Promise<DailyObservat
 }
 
 export async function saveObservations(observations: DailyObservation[]): Promise<void> {
-  if (isDemo) return
+  if (isDemo) {
+    const locationId = observations[0]?.location_id
+    if (locationId) demoObservationsStore[locationId] = observations
+    return
+  }
   const { error } = await supabase.from('daily_observations').upsert(observations)
   if (error) throw error
 }
