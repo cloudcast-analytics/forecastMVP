@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -10,6 +11,8 @@ import {
   Users,
   Settings,
   LogOut,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 
@@ -26,8 +29,15 @@ const navItems = [
 ]
 
 export default function Sidebar() {
-  const { selectedCompany, selectedLocation, logout, currentUser, isDemo } = useApp()
+  const { selectedCompany, selectedLocation, setSelectedLocation, locations, logout, currentUser, isDemo } = useApp()
   const navigate = useNavigate()
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar-collapsed') === 'true')
+
+  function toggleCollapsed() {
+    const next = !collapsed
+    setCollapsed(next)
+    localStorage.setItem('sidebar-collapsed', String(next))
+  }
 
   async function handleLogout() {
     await logout()
@@ -36,7 +46,8 @@ export default function Sidebar() {
 
   return (
     <aside style={{
-      width: '240px',
+      width: collapsed ? '64px' : '240px',
+      transition: 'width 0.2s ease',
       flexShrink: 0,
       display: 'flex',
       flexDirection: 'column',
@@ -46,6 +57,7 @@ export default function Sidebar() {
       WebkitBackdropFilter: 'blur(24px)',
       borderRight: '1px solid rgba(255,255,255,0.4)',
       boxShadow: '1px 0 12px rgba(26,68,232,0.03)',
+      overflow: 'hidden',
     }}>
       {/* Logo */}
       <div style={{
@@ -54,6 +66,7 @@ export default function Sidebar() {
         gap: '10px',
         padding: '4px 12px',
         marginBottom: '8px',
+        whiteSpace: 'nowrap',
       }}>
         <img
           src="/logo-icon.png"
@@ -61,21 +74,24 @@ export default function Sidebar() {
           style={{
             height: '30px',
             width: 'auto',
+            flexShrink: 0,
             filter: 'drop-shadow(0 2px 4px rgba(26,68,232,.12))',
           }}
         />
-        <span style={{
-          fontFamily: "'DM Serif Display', serif",
-          fontSize: '17px',
-          fontWeight: 400,
-          color: '#1a1f36',
-        }}>
-          CloudCast
-        </span>
+        {!collapsed && (
+          <span style={{
+            fontFamily: "'DM Serif Display', serif",
+            fontSize: '17px',
+            fontWeight: 400,
+            color: '#1a1f36',
+          }}>
+            CloudCast
+          </span>
+        )}
       </div>
 
-      {/* Company/location context */}
-      {(selectedCompany || isDemo) && (
+      {/* Company/location context — verborgen als ingeklapt */}
+      {!collapsed && (selectedCompany || isDemo) && (
         <div style={{
           margin: '4px 12px 16px',
           padding: '10px 12px',
@@ -104,15 +120,41 @@ export default function Sidebar() {
               Demo
             </span>
           )}
-          {selectedLocation && (
+          {/* Locatieselector: plain tekst bij 1 locatie, dropdown bij 2+ */}
+          {locations.length === 1 && selectedLocation && (
             <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
               {selectedLocation.name}
             </p>
           )}
+          {locations.length > 1 && (
+            <select
+              value={selectedLocation?.id ?? ''}
+              onChange={e => {
+                const loc = locations.find(l => l.id === e.target.value) ?? null
+                setSelectedLocation(loc)
+              }}
+              style={{
+                marginTop: '6px',
+                width: '100%',
+                fontSize: '12px',
+                color: '#1a1f36',
+                background: 'transparent',
+                border: 'none',
+                outline: 'none',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                padding: 0,
+              }}
+            >
+              {locations.map(l => (
+                <option key={l.id} value={l.id}>{l.name}</option>
+              ))}
+            </select>
+          )}
         </div>
       )}
 
-      {/* Navigation */}
+      {/* Navigatie */}
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
         {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
@@ -121,8 +163,9 @@ export default function Sidebar() {
             style={({ isActive }) => ({
               display: 'flex',
               alignItems: 'center',
+              justifyContent: collapsed ? 'center' : 'flex-start',
               gap: '10px',
-              padding: '9px 14px',
+              padding: collapsed ? '9px 0' : '9px 14px',
               borderRadius: '12px',
               textDecoration: 'none',
               fontSize: '14px',
@@ -130,26 +173,31 @@ export default function Sidebar() {
               color: isActive ? '#1a44e8' : '#6b7280',
               background: isActive ? 'rgba(26,68,232,0.08)' : 'transparent',
               transition: 'all 0.15s',
+              whiteSpace: 'nowrap',
             })}
           >
             {({ isActive }) => (
               <>
                 <Icon size={16} color={isActive ? '#1a44e8' : '#9ca3af'} />
-                {label}
+                {!collapsed && label}
               </>
             )}
           </NavLink>
         ))}
       </nav>
 
-      {/* Footer */}
+      {/* Footer: logout + collapse toggle */}
       <div style={{
         padding: '16px 14px',
         borderTop: '1px solid rgba(0,0,0,0.06)',
         marginTop: '8px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        alignItems: collapsed ? 'center' : 'flex-start',
       }}>
-        {currentUser?.email && (
-          <p style={{ fontSize: '12px', fontWeight: 500, color: '#1a1f36', marginBottom: '4px' }}>
+        {!collapsed && currentUser?.email && (
+          <p style={{ fontSize: '12px', fontWeight: 500, color: '#1a1f36' }}>
             {currentUser.email}
           </p>
         )}
@@ -169,7 +217,25 @@ export default function Sidebar() {
           }}
         >
           <LogOut size={13} />
-          Uitloggen
+          {!collapsed && 'Uitloggen'}
+        </button>
+        <button
+          onClick={toggleCollapsed}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: 0,
+            border: 'none',
+            background: 'none',
+            fontSize: '12px',
+            color: '#9ca3af',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          {!collapsed && 'Inklappen'}
         </button>
       </div>
     </aside>
