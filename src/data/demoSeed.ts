@@ -26,6 +26,19 @@ export const DEMO_LOCATION: Location = {
   created_at: '2025-01-01',
 }
 
+export const DEMO_LOCATION_2: Location = {
+  id: 'demo-location-2',
+  company_id: 'demo-company',
+  name: 'Waterfront Hasselt',
+  address: 'Kempische Steenweg 100',
+  city: 'Hasselt',
+  country: 'België',
+  location_type: 'Leisure / Horeca',
+  max_capacity: 800,
+  notes: '',
+  created_at: '2025-01-01',
+}
+
 export const DEMO_STAFFING_RULES: StaffingRule[] = [
   {
     id: 'rule-1',

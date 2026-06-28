@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import type { Company, Location } from '../types/database'
 import { isDemo, supabase } from '../lib/supabase'
 import { getCompanies, getLocations } from '../services/supabaseService'
-import { DEMO_COMPANY, DEMO_LOCATION } from '../data/demoSeed'
+import { DEMO_COMPANY, DEMO_LOCATION, DEMO_LOCATION_2 } from '../data/demoSeed'
 
 interface AppContextValue {
   selectedCompany: Company | null
@@ -33,7 +33,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setCurrentUser({ email: 'demo@cloudcast.be' })
       setIsAuthenticated(true)
       setCompanies([DEMO_COMPANY])
-      setLocations([DEMO_LOCATION])
+      setLocations([DEMO_LOCATION, DEMO_LOCATION_2])
       setSelectedCompanyState(DEMO_COMPANY)
       setSelectedLocationState(DEMO_LOCATION)
       return
@@ -92,7 +92,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setIsAuthenticated(true)
     if (isDemo) {
       setCompanies([DEMO_COMPANY])
-      setLocations([DEMO_LOCATION])
+      setLocations([DEMO_LOCATION, DEMO_LOCATION_2])
       setSelectedCompanyState(DEMO_COMPANY)
       setSelectedLocationState(DEMO_LOCATION)
     }
