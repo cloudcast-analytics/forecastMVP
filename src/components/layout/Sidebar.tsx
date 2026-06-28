@@ -11,8 +11,7 @@ import {
   Users,
   Settings,
   LogOut,
-  ChevronLeft,
-  ChevronRight,
+  Menu,
 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 
@@ -51,7 +50,7 @@ export default function Sidebar() {
       flexShrink: 0,
       display: 'flex',
       flexDirection: 'column',
-      padding: '20px 12px',
+      padding: '16px 12px',
       background: 'rgba(255,255,255,0.55)',
       backdropFilter: 'blur(24px)',
       WebkitBackdropFilter: 'blur(24px)',
@@ -59,26 +58,48 @@ export default function Sidebar() {
       boxShadow: '1px 0 12px rgba(26,68,232,0.03)',
       overflow: 'hidden',
     }}>
-      {/* Logo */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        padding: '4px 12px',
-        marginBottom: '8px',
-        whiteSpace: 'nowrap',
-      }}>
-        <img
-          src="/logo-icon.png"
-          alt=""
-          style={{
-            height: '30px',
-            width: 'auto',
-            flexShrink: 0,
-            filter: 'drop-shadow(0 2px 4px rgba(26,68,232,.12))',
-          }}
-        />
-        {!collapsed && (
+      {/* Hamburger toggle — bovenaan, altijd zichtbaar */}
+      <button
+        onClick={toggleCollapsed}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '36px',
+          height: '36px',
+          borderRadius: '10px',
+          border: 'none',
+          background: 'none',
+          cursor: 'pointer',
+          color: '#1a1f36',
+          alignSelf: collapsed ? 'center' : 'flex-start',
+          marginBottom: '12px',
+          flexShrink: 0,
+        }}
+      >
+        <Menu size={20} />
+      </button>
+
+      {/* Logo — verborgen als ingeklapt */}
+      {!collapsed && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          padding: '0 12px',
+          marginBottom: '16px',
+          whiteSpace: 'nowrap',
+        }}>
+          <img
+            src="/logo-icon.png"
+            alt=""
+            style={{
+              height: '28px',
+              width: 'auto',
+              flexShrink: 0,
+              filter: 'drop-shadow(0 2px 4px rgba(26,68,232,.12))',
+            }}
+          />
           <span style={{
             fontFamily: "'DM Serif Display', serif",
             fontSize: '17px',
@@ -87,13 +108,13 @@ export default function Sidebar() {
           }}>
             CloudCast
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Company/location context — verborgen als ingeklapt */}
       {!collapsed && (selectedCompany || isDemo) && (
         <div style={{
-          margin: '4px 12px 16px',
+          margin: '0 12px 16px',
           padding: '10px 12px',
           borderRadius: '12px',
           background: 'rgba(26,68,232,0.05)',
@@ -120,7 +141,6 @@ export default function Sidebar() {
               Demo
             </span>
           )}
-          {/* Locatieselector: plain tekst bij 1 locatie, dropdown bij 2+ */}
           {locations.length === 1 && selectedLocation && (
             <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
               {selectedLocation.name}
@@ -186,18 +206,18 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer: logout + collapse toggle */}
+      {/* Footer: alleen logout */}
       <div style={{
         padding: '16px 14px',
         borderTop: '1px solid rgba(0,0,0,0.06)',
         marginTop: '8px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '8px',
+        gap: '4px',
         alignItems: collapsed ? 'center' : 'flex-start',
       }}>
         {!collapsed && currentUser?.email && (
-          <p style={{ fontSize: '12px', fontWeight: 500, color: '#1a1f36' }}>
+          <p style={{ fontSize: '12px', fontWeight: 500, color: '#1a1f36', marginBottom: '4px' }}>
             {currentUser.email}
           </p>
         )}
@@ -218,24 +238,6 @@ export default function Sidebar() {
         >
           <LogOut size={13} />
           {!collapsed && 'Uitloggen'}
-        </button>
-        <button
-          onClick={toggleCollapsed}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            padding: 0,
-            border: 'none',
-            background: 'none',
-            fontSize: '12px',
-            color: '#9ca3af',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-          }}
-        >
-          {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-          {!collapsed && 'Inklappen'}
         </button>
       </div>
     </aside>
