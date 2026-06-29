@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { TrendingUp, TrendingDown, Euro, Users, CalendarDays, Award } from 'lucide-react'
+import { TrendingUp, TrendingDown, Euro, Users, Award } from 'lucide-react'
 import Layout from '../components/layout/Layout'
 import { useApp } from '../context/AppContext'
 import { getObservations } from '../services/supabaseService'
@@ -257,8 +257,8 @@ export default function PerformancePage() {
                 <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} tickLine={false} axisLine={false}
                   tickFormatter={v => view === 'omzet' ? `€${(v/1000).toFixed(0)}k` : String(v)} width={48} />
                 <Tooltip
-                  formatter={(val: number, name: string) => [
-                    view === 'omzet' ? formatEuro(val) : val,
+                  formatter={(val, name) => [
+                    view === 'omzet' ? formatEuro(Number(val)) : val,
                     name === 'omzet' ? 'Huidig' : name === 'omzetVorig' ? 'Vorig' : name === 'bezoekers' ? 'Huidig' : 'Vorig',
                   ]}
                   contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid rgba(0,0,0,0.08)' }}
@@ -285,7 +285,7 @@ export default function PerformancePage() {
                   <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#6b7280' }} tickLine={false} axisLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} tickLine={false} axisLine={false}
                     tickFormatter={v => `€${(v/1000).toFixed(0)}k`} width={48} />
-                  <Tooltip formatter={(v: number) => [formatEuro(v), 'Gem. omzet']} contentStyle={{ fontSize: 12, borderRadius: 10 }} />
+                  <Tooltip formatter={(v) => [formatEuro(Number(v)), 'Gem. omzet']} contentStyle={{ fontSize: 12, borderRadius: 10 }} />
                   <Bar dataKey="avg" fill="#1a44e8" radius={[6, 6, 0, 0]} fillOpacity={0.8} />
                 </BarChart>
               </ResponsiveContainer>
