@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Database, TrendingUp, Users, CheckCircle, Upload, BarChart2 } from 'lucide-react'
+import { Database, TrendingUp, Users, CheckCircle, Upload, BarChart2, Package, ChevronRight } from 'lucide-react'
 import Layout from '../components/layout/Layout'
 import KpiCard from '../components/dashboard/KpiCard'
 import RevenueChart from '../components/dashboard/RevenueChart'
-import Button from '../components/ui/Button'
 import { useApp } from '../context/AppContext'
 import { getObservations, getStaffingRules } from '../services/supabaseService'
 import { generateForecast } from '../services/forecastService'
@@ -101,21 +100,40 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick actions */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+          <div>
             <h3 className="text-sm font-semibold text-slate-700 mb-3">Snelle acties</h3>
-            <div className="flex flex-wrap gap-3">
-              <Button variant="secondary" onClick={() => navigate('/data/upload')}>
-                <Upload size={15} />
-                Data uploaden
-              </Button>
-              <Button variant="secondary" onClick={() => navigate('/forecast')}>
-                <BarChart2 size={15} />
-                Forecast bekijken
-              </Button>
-              <Button variant="secondary" onClick={() => navigate('/data')}>
-                <Database size={15} />
-                Mijn data
-              </Button>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { icon: TrendingUp, label: 'Forecast bekijken', sub: '14-daagse voorspelling', path: '/forecast', color: '#1a44e8', bg: 'rgba(26,68,232,0.07)' },
+                { icon: Upload, label: 'Data uploaden', sub: 'Historische data importeren', path: '/data/upload', color: '#0891b2', bg: 'rgba(8,145,178,0.07)' },
+                { icon: BarChart2, label: 'Performance', sub: 'Omzet & bezoekersanalyse', path: '/performance', color: '#7c3aed', bg: 'rgba(124,58,237,0.07)' },
+                { icon: Package, label: 'Voorraad', sub: 'Stockbeheer & bestellingen', path: '/voorraad', color: '#059669', bg: 'rgba(5,150,105,0.07)' },
+              ].map(({ icon: Icon, label, sub, path, color, bg }) => (
+                <button
+                  key={path}
+                  onClick={() => navigate(path)}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                    gap: '12px', padding: '20px', borderRadius: '16px',
+                    background: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(255,255,255,0.5)',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
+                    cursor: 'pointer', textAlign: 'left', width: '100%',
+                    transition: 'transform 0.15s, box-shadow 0.15s',
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 20px rgba(0,0,0,0.10)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 2px 12px rgba(0,0,0,0.05)' }}
+                >
+                  <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon size={22} color={color} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '14px', fontWeight: 600, color: '#1a1f36', marginBottom: '2px' }}>{label}</p>
+                    <p style={{ fontSize: '12px', color: '#9ca3af' }}>{sub}</p>
+                  </div>
+                  <ChevronRight size={16} color="#d1d5db" style={{ alignSelf: 'flex-end' }} />
+                </button>
+              ))}
             </div>
           </div>
         </>
