@@ -59,15 +59,19 @@ export default function ForecastChart({ forecast }: ForecastChartProps) {
             <Area
               type="monotone"
               dataKey="high"
-              stroke="none"
+              stroke="#93c5fd"
+              strokeWidth={1}
+              strokeDasharray="4 2"
               fill="#dbeafe"
-              fillOpacity={0.6}
+              fillOpacity={0.5}
               name="high"
             />
             <Area
               type="monotone"
               dataKey="low"
-              stroke="none"
+              stroke="#93c5fd"
+              strokeWidth={1}
+              strokeDasharray="4 2"
               fill="#fff"
               fillOpacity={1}
               name="low"
