@@ -50,6 +50,7 @@ export default function UploadPage() {
   const [mapping, setMapping] = useState<Record<string, string>>({})
   const [validResults, setValidResults] = useState<{ valid: number; invalid: number; errors: string[] }>({ valid: 0, invalid: 0, errors: [] })
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   function handleFileLoaded(loadedRows: Record<string, string>[], name: string) {
     setRows(loadedRows)
@@ -109,7 +110,7 @@ export default function UploadPage() {
       const features = getDateFeatures(dateStr)
 
       observations.push({
-        id: `import-${Date.now()}-${i}`,
+        id: crypto.randomUUID(),
         company_id: selectedCompany.id,
         location_id: selectedLocation.id,
         date: dateStr,
@@ -124,9 +125,15 @@ export default function UploadPage() {
       })
     }
 
-    await saveObservations(observations)
-    setSaving(false)
-    setStep('done')
+    try {
+      await saveObservations(observations)
+      setStep('done')
+    } catch (err: unknown) {
+      const msg = (err as { message?: string })?.message ?? JSON.stringify(err)
+      setSaveError(msg)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const detectedColumns = rows.length > 0 ? Object.keys(rows[0]) : []
@@ -248,6 +255,11 @@ export default function UploadPage() {
               <ul className="text-xs text-red-600 space-y-1">
                 {validResults.errors.map((e, i) => <li key={i}>{e}</li>)}
               </ul>
+            </div>
+          )}
+          {saveError && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4 text-sm text-red-700">
+              <strong>Fout bij importeren:</strong> {saveError}
             </div>
           )}
           <div className="flex gap-3">

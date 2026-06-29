@@ -17,16 +17,16 @@ import {
 import { useApp } from '../../context/AppContext'
 
 const allNavItems = [
-  { to: '/dashboard',                label: 'Dashboard',         icon: LayoutDashboard, adminOnly: false },
-  { to: '/companies',                label: 'Bedrijven',         icon: Building2,       adminOnly: true  },
-  { to: '/locations',                label: 'Locaties',          icon: MapPin,          adminOnly: true  },
-  { to: '/data/upload',              label: 'Upload data',       icon: Upload,          adminOnly: false },
-  { to: '/data',                     label: 'Mijn data',         icon: Database,        adminOnly: false },
-  { to: '/forecast',                 label: 'Forecast',          icon: TrendingUp,      adminOnly: false },
-  { to: '/performance',             label: 'Performance',       icon: BarChart2,       adminOnly: false },
-  { to: '/staffing',                 label: 'Personeelsregels',  icon: Users,           adminOnly: false },
-  { to: '/organization',             label: 'Organisatie',       icon: Building,        adminOnly: false },
-  { to: '/settings/data-management', label: 'Data beheer',       icon: Settings,        adminOnly: true  },
+  { to: '/dashboard',                label: 'Dashboard',         icon: LayoutDashboard, adminOnly: false, end: true  },
+  { to: '/companies',                label: 'Bedrijven',         icon: Building2,       adminOnly: true,  end: true  },
+  { to: '/locations',                label: 'Locaties',          icon: MapPin,          adminOnly: true,  end: true  },
+  { to: '/data/upload',              label: 'Upload data',       icon: Upload,          adminOnly: false, end: true  },
+  { to: '/data',                     label: 'Mijn data',         icon: Database,        adminOnly: false, end: true  },
+  { to: '/forecast',                 label: 'Forecast',          icon: TrendingUp,      adminOnly: false, end: true  },
+  { to: '/performance',              label: 'Performance',       icon: BarChart2,       adminOnly: false, end: true  },
+  { to: '/staffing',                 label: 'Personeelsregels',  icon: Users,           adminOnly: false, end: true  },
+  { to: '/organization',             label: 'Organisatie',       icon: Building,        adminOnly: false, end: true  },
+  { to: '/settings/data-management', label: 'Data beheer',       icon: Settings,        adminOnly: true,  end: true  },
 ]
 
 export default function Sidebar() {
@@ -179,10 +179,11 @@ export default function Sidebar() {
 
       {/* Navigatie */}
       <nav style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-        {navItems.map(({ to, label, icon: Icon }) => (
+        {navItems.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
+            end={end}
             style={({ isActive }) => ({
               display: 'flex',
               alignItems: 'center',

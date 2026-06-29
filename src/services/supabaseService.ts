@@ -52,7 +52,9 @@ export async function saveObservations(observations: DailyObservation[]): Promis
     if (locationId) demoObservationsStore[locationId] = observations
     return
   }
-  const { error } = await supabase.from('daily_observations').upsert(observations)
+  const { error } = await supabase
+    .from('daily_observations')
+    .upsert(observations, { onConflict: 'location_id,date' })
   if (error) throw error
 }
 
