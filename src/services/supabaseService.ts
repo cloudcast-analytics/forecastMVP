@@ -52,9 +52,13 @@ export async function saveObservations(observations: DailyObservation[]): Promis
     if (locationId) demoObservationsStore[locationId] = observations
     return
   }
+  // Dedupliceer op date — houd de laatste rij per datum
+  const deduped = Object.values(
+    observations.reduce((acc, o) => ({ ...acc, [o.date]: o }), {} as Record<string, typeof observations[0]>)
+  )
   const { error } = await supabase
     .from('daily_observations')
-    .upsert(observations, { onConflict: 'location_id,date' })
+    .upsert(deduped, { onConflict: 'location_id,date' })
   if (error) throw error
 }
 
