@@ -14,6 +14,7 @@ dist-ssr
 .env
 seed.mjs
 seed_users.mjs
+seed_demo.mjs
 voorbeeld-data.csv
 
 # Editor directories and files
@@ -26,3 +27,5 @@ voorbeeld-data.csv
 *.njsproj
 *.sln
 *.sw?
+.vercel
+data-2026.csv
