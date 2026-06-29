@@ -8,6 +8,7 @@ import {
   Upload,
   Database,
   TrendingUp,
+  BarChart2,
   Users,
   Settings,
   LogOut,
@@ -15,20 +16,22 @@ import {
 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 
-const navItems = [
-  { to: '/dashboard',                label: 'Dashboard',         icon: LayoutDashboard },
-  { to: '/companies',                label: 'Bedrijven',         icon: Building2 },
-  { to: '/locations',                label: 'Locaties',          icon: MapPin },
-  { to: '/data/upload',              label: 'Upload data',       icon: Upload },
-  { to: '/data',                     label: 'Mijn data',         icon: Database },
-  { to: '/forecast',                 label: 'Forecast',          icon: TrendingUp },
-  { to: '/staffing',                 label: 'Personeelsregels',  icon: Users },
-  { to: '/organization',             label: 'Organisatie',       icon: Building },
-  { to: '/settings/data-management', label: 'Data beheer',       icon: Settings },
+const allNavItems = [
+  { to: '/dashboard',                label: 'Dashboard',         icon: LayoutDashboard, adminOnly: false },
+  { to: '/companies',                label: 'Bedrijven',         icon: Building2,       adminOnly: true  },
+  { to: '/locations',                label: 'Locaties',          icon: MapPin,          adminOnly: true  },
+  { to: '/data/upload',              label: 'Upload data',       icon: Upload,          adminOnly: false },
+  { to: '/data',                     label: 'Mijn data',         icon: Database,        adminOnly: false },
+  { to: '/forecast',                 label: 'Forecast',          icon: TrendingUp,      adminOnly: false },
+  { to: '/performance',             label: 'Performance',       icon: BarChart2,       adminOnly: false },
+  { to: '/staffing',                 label: 'Personeelsregels',  icon: Users,           adminOnly: false },
+  { to: '/organization',             label: 'Organisatie',       icon: Building,        adminOnly: false },
+  { to: '/settings/data-management', label: 'Data beheer',       icon: Settings,        adminOnly: true  },
 ]
 
 export default function Sidebar() {
-  const { selectedCompany, selectedLocation, setSelectedLocation, locations, logout, currentUser, isDemo } = useApp()
+  const { selectedCompany, selectedLocation, setSelectedLocation, locations, logout, currentUser, isDemo, role } = useApp()
+  const navItems = allNavItems.filter(item => !item.adminOnly || role === 'admin')
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar-collapsed') === 'true')
 
@@ -58,7 +61,7 @@ export default function Sidebar() {
       boxShadow: '1px 0 12px rgba(26,68,232,0.03)',
       overflow: 'hidden',
     }}>
-      {/* Hamburger toggle — bovenaan, altijd zichtbaar */}
+      {/* Hamburger toggle */}
       <button
         onClick={toggleCollapsed}
         style={{
@@ -80,7 +83,7 @@ export default function Sidebar() {
         <Menu size={20} />
       </button>
 
-      {/* Logo — verborgen als ingeklapt */}
+      {/* Logo */}
       {!collapsed && (
         <div style={{
           display: 'flex',
@@ -111,7 +114,7 @@ export default function Sidebar() {
         </div>
       )}
 
-      {/* Company/location context — verborgen als ingeklapt */}
+      {/* Company/location context */}
       {!collapsed && (selectedCompany || isDemo) && (
         <div style={{
           margin: '0 12px 16px',
@@ -206,7 +209,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer: alleen logout */}
+      {/* Footer */}
       <div style={{
         padding: '16px 14px',
         borderTop: '1px solid rgba(0,0,0,0.06)',

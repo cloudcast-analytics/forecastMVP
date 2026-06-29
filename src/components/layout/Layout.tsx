@@ -1,5 +1,6 @@
 import React from 'react'
 import Sidebar from './Sidebar'
+import Cloudy from '../cloudy/Cloudy'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -17,6 +18,7 @@ export default function Layout({ children }: LayoutProps) {
           {children}
         </div>
       </main>
+      <Cloudy />
     </div>
   )
 }

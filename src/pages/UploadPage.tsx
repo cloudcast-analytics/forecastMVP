@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { CheckCircle, AlertCircle } from 'lucide-react'
+import { CheckCircle, AlertCircle, Sparkles } from 'lucide-react'
 import Layout from '../components/layout/Layout'
 import Button from '../components/ui/Button'
 import FileUpload from '../components/data/FileUpload'
@@ -11,6 +11,36 @@ import type { DailyObservation } from '../types/database'
 import { getDateFeatures } from '../lib/utils'
 
 type Step = 'upload' | 'preview' | 'map' | 'validate' | 'done'
+
+const CLOUDY_TIPS: Record<string, string> = {
+  upload: 'Upload een CSV of Excel-bestand. Zorg dat rij 1 kolomnamen bevat en je een datumkolom hebt (bijv. "Datum" of "Date"). Omzet, bezoekers en personeel zijn optioneel maar verbeteren je forecast.',
+  preview: 'Ziet dit er goed uit? Controleer of de rijen kloppen en je de juiste kolommen ziet. Zijn er lege rijen of rare waarden? Dat los je op in de volgende stap.',
+  map: 'Koppel elke kolom aan het juiste veld. Een datumkolom is verplicht. Ontbrekende kolommen kun je leeg laten — die data wordt dan niet geïmporteerd.',
+  validate: 'Ik heb je data gecontroleerd. Ongeldige rijen (bijv. ontbrekende datum of tekst in een getallenveld) worden overgeslagen. Geldige rijen kun je gewoon importeren.',
+  done: 'Super! Je data is geïmporteerd. Ga naar de Forecast-pagina om te zien wat ik ervan maak. Hoe meer historische data je hebt, hoe nauwkeuriger de prognose.',
+}
+
+function CloudyTip({ step }: { step: string }) {
+  return (
+    <div style={{
+      display: 'flex', gap: '10px', alignItems: 'flex-start',
+      background: 'rgba(26,68,232,0.05)', border: '1px solid rgba(26,68,232,0.12)',
+      borderRadius: '12px', padding: '12px 14px', marginBottom: '20px',
+    }}>
+      <div style={{
+        width: '26px', height: '26px', borderRadius: '50%', flexShrink: 0,
+        background: 'linear-gradient(135deg, #1a44e8, #6b3cdc)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Sparkles size={13} color="#fff" />
+      </div>
+      <div>
+        <p style={{ fontSize: '12px', fontWeight: 600, color: '#1a44e8', marginBottom: '2px' }}>Cloudy zegt</p>
+        <p style={{ fontSize: '13px', color: '#374151', lineHeight: 1.5 }}>{CLOUDY_TIPS[step]}</p>
+      </div>
+    </div>
+  )
+}
 
 export default function UploadPage() {
   const { selectedCompany, selectedLocation } = useApp()
@@ -24,7 +54,6 @@ export default function UploadPage() {
   function handleFileLoaded(loadedRows: Record<string, string>[], name: string) {
     setRows(loadedRows)
     setFilename(name)
-    // Auto-detect mapping
     const firstRow = loadedRows[0] ?? {}
     const autoMap: Record<string, string> = {}
     for (const col of Object.keys(firstRow)) {
@@ -58,7 +87,10 @@ export default function UploadPage() {
   }
 
   async function handleImport() {
-    if (!selectedCompany || !selectedLocation) return
+    if (!selectedCompany || !selectedLocation) {
+      alert('Selecteer eerst een locatie via de zijbalk voordat je data importeert.')
+      return
+    }
     setSaving(true)
     const observations: DailyObservation[] = []
 
@@ -108,6 +140,18 @@ export default function UploadPage() {
         </p>
       </div>
 
+      {!selectedLocation && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '10px',
+          background: 'rgba(234,88,12,0.07)', border: '1px solid rgba(234,88,12,0.25)',
+          borderRadius: '12px', padding: '12px 16px', marginBottom: '20px',
+          fontSize: '13px', color: '#c2410c',
+        }}>
+          <span style={{ fontSize: '16px' }}>⚠️</span>
+          <span>Geen locatie geselecteerd. Kies eerst een locatie via de zijbalk om data te kunnen importeren.</span>
+        </div>
+      )}
+
       {/* Step indicator */}
       <div className="flex items-center gap-2 mb-8 text-sm">
         {(['upload', 'preview', 'map', 'validate', 'done'] as Step[]).map((s, i) => {
@@ -129,11 +173,15 @@ export default function UploadPage() {
       </div>
 
       {step === 'upload' && (
-        <FileUpload onFileLoaded={handleFileLoaded} />
+        <>
+          <CloudyTip step="upload" />
+          <FileUpload onFileLoaded={handleFileLoaded} />
+        </>
       )}
 
       {step === 'preview' && (
         <div>
+          <CloudyTip step="preview" />
           <p className="text-sm text-slate-600 mb-4">
             Bestand: <strong>{filename}</strong> — {rows.length} rijen gevonden
           </p>
@@ -166,6 +214,7 @@ export default function UploadPage() {
 
       {step === 'map' && (
         <div>
+          <CloudyTip step="map" />
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
             <ColumnMapper detectedColumns={detectedColumns} mapping={mapping} onChange={setMapping} />
           </div>
@@ -178,6 +227,7 @@ export default function UploadPage() {
 
       {step === 'validate' && (
         <div>
+          <CloudyTip step="validate" />
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-green-50 border border-green-200 rounded-xl p-4">
               <div className="flex items-center gap-2 text-green-700">
@@ -210,15 +260,18 @@ export default function UploadPage() {
       )}
 
       {step === 'done' && (
-        <div className="text-center py-16">
-          <CheckCircle size={48} className="mx-auto text-green-500 mb-4" />
-          <h2 className="text-xl font-bold text-slate-900 mb-2">Import geslaagd!</h2>
-          <p className="text-slate-500 text-sm mb-6">
-            {validResults.valid} observaties zijn succesvol geïmporteerd.
-          </p>
-          <div className="flex justify-center gap-3">
-            <Button variant="secondary" onClick={() => setStep('upload')}>Nog een bestand uploaden</Button>
-            <Button onClick={() => window.location.href = '/data'}>Naar mijn data</Button>
+        <div>
+          <CloudyTip step="done" />
+          <div className="text-center py-12">
+            <CheckCircle size={48} className="mx-auto text-green-500 mb-4" />
+            <h2 className="text-xl font-bold text-slate-900 mb-2">Import geslaagd!</h2>
+            <p className="text-slate-500 text-sm mb-6">
+              {validResults.valid} observaties zijn succesvol geïmporteerd.
+            </p>
+            <div className="flex justify-center gap-3">
+              <Button variant="secondary" onClick={() => setStep('upload')}>Nog een bestand uploaden</Button>
+              <Button onClick={() => window.location.href = '/data'}>Naar mijn data</Button>
+            </div>
           </div>
         </div>
       )}

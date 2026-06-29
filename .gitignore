@@ -11,6 +11,10 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+seed.mjs
+seed_users.mjs
+voorbeeld-data.csv
 
 # Editor directories and files
 .vscode/*

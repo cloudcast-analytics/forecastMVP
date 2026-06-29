@@ -17,8 +17,16 @@ export function validateRow(
 
   if (!dateField || !row[dateField]) {
     errors.push('Datum ontbreekt')
-  } else if (isNaN(Date.parse(row[dateField]))) {
-    errors.push(`Ongeldige datum: ${row[dateField]}`)
+  } else {
+    // Support DD/MM/YYYY → convert to YYYY-MM-DD before parsing
+    const raw = row[dateField].trim()
+    const ddmmyyyy = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
+    const normalized = ddmmyyyy ? `${ddmmyyyy[3]}-${ddmmyyyy[2].padStart(2,'0')}-${ddmmyyyy[1].padStart(2,'0')}` : raw
+    if (isNaN(Date.parse(normalized))) {
+      errors.push(`Ongeldige datum: ${raw}`)
+    } else {
+      row[dateField] = normalized
+    }
   }
 
   if (!revenueField && !visitorsField) {

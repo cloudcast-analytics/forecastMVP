@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CloudCast Analytics</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:      #1a44e8;
+      --blue-mid:  #2d55f0;
+      --blue-pale: #e8eeff;
+      --text:      #1a1f36;
+      --muted:     #6b7280;
+      --glass-bg:  rgba(255,255,255,0.55);
+      --glass-border: rgba(255,255,255,0.35);
+      --glass-shadow: 0 8px 32px rgba(26,68,232,0.08), 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    body {
+      background:
+        radial-gradient(ellipse at 20% 0%,   rgba(26,68,232,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%,  rgba(99,140,255,0.07) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 100%, rgba(167,139,250,0.06) 0%, transparent 50%),
+        linear-gradient(180deg, #f0f4ff 0%, #f8f9ff 50%, #f5f3ff 100%);
+    }
+
+    .deck {
+      width: 100%;
+      height: 100vh;
+      position: relative;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 56px 48px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* glass card */
+    .glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      border-radius: 20px;
+    }
+
+    /* nav */
+    .nav {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 10;
+    }
+    .nav-dots { display: flex; gap: 6px; }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 99px;
+      background: rgba(26,68,232,0.2);
+      transition: all 0.25s;
+      cursor: pointer;
+    }
+    .dot.active { width: 18px; background: var(--blue); }
+    .nav-btn {
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: 0 2px 8px rgba(26,68,232,0.08);
+      color: var(--text);
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 15px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,0.9); }
+
+    .counter {
+      position: fixed;
+      top: 22px; right: 28px;
+      font-size: 12px;
+      color: var(--muted);
+      z-index: 10;
+      letter-spacing: 0.04em;
+    }
+
+    .logo-fixed {
+      position: fixed;
+      top: 20px; left: 28px;
+      display: flex; align-items: center; gap: 8px;
+      z-index: 10;
+    }
+    .logo-fixed img { height: 26px; }
+    .logo-fixed span {
+      font-family: 'DM Serif Display', serif;
+      font-size: 15px;
+      color: var(--text);
+    }
+
+    /* labels */
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: var(--blue);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    /* ── SLIDE 1 — COVER ── */
+    .s1-heading {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(38px, 5.5vw, 64px);
+      line-height: 1.1;
+      text-align: center;
+      color: var(--text);
+      max-width: 740px;
+      margin-bottom: 20px;
+    }
+    .s1-heading em {
+      font-style: italic;
+      color: var(--blue);
+    }
+    .s1-sub {
+      font-size: 17px;
+      color: var(--muted);
+      text-align: center;
+      max-width: 460px;
+      line-height: 1.6;
+      margin-bottom: 36px;
+    }
+    .s1-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      border-radius: 99px;
+      background: var(--blue-pale);
+      border: 1px solid rgba(26,68,232,0.15);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--blue);
+    }
+
+    /* ── SLIDE 2 — PROBLEEM ── */
+    .slide-heading {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(26px, 3.5vw, 42px);
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 32px;
+      align-self: flex-start;
+      max-width: 760px;
+      width: 100%;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      max-width: 760px;
+      width: 100%;
+    }
+    .card {
+      background: rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: 0 4px 16px rgba(26,68,232,0.06);
+      border-radius: 16px;
+      padding: 22px;
+    }
+    .card-icon { font-size: 20px; margin-bottom: 10px; }
+    .card-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .card-body  { font-size: 13px; color: var(--muted); line-height: 1.55; }
+
+    /* ── SLIDE 3 — WAT WE DOEN ── */
+    .steps {
+      display: flex; flex-direction: column;
+      max-width: 660px; width: 100%;
+    }
+    .step {
+      display: flex; gap: 20px;
+      padding: 20px 0;
+      border-bottom: 1px solid rgba(26,68,232,0.07);
+    }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: var(--blue-pale);
+      border: 1px solid rgba(26,68,232,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600; color: var(--blue);
+      flex-shrink: 0; margin-top: 2px;
+    }
+    .step-title { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+    .step-body  { font-size: 13px; color: var(--muted); line-height: 1.55; }
+
+    /* ── SLIDE 4 — DASHBOARD MOCK ── */
+    .mock-wrap { max-width: 800px; width: 100%; }
+    .mock-card {
+      background: rgba(255,255,255,0.8);
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: 0 8px 32px rgba(26,68,232,0.08);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .mock-topbar {
+      background: rgba(26,68,232,0.03);
+      border-bottom: 1px solid rgba(26,68,232,0.07);
+      padding: 12px 20px;
+      font-size: 13px; font-weight: 500;
+      color: var(--muted);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .mock-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); }
+    .mock-table { width: 100%; border-collapse: collapse; }
+    .mock-table th {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--muted); padding: 10px 16px; text-align: left;
+      border-bottom: 1px solid rgba(26,68,232,0.07);
+      background: rgba(26,68,232,0.02);
+    }
+    .mock-table td {
+      padding: 10px 16px; font-size: 13px; color: var(--text);
+      border-bottom: 1px solid rgba(26,68,232,0.05);
+    }
+    .mock-table tr:last-child td { border-bottom: none; }
+    .mock-table tr.hl td {
+      background: rgba(26,68,232,0.04);
+    }
+    .badge {
+      display: inline-block; padding: 2px 10px;
+      border-radius: 99px; font-size: 11px; font-weight: 500;
+    }
+    .badge-red    { background: rgba(239,68,68,0.1);   color: #dc2626; }
+    .badge-orange { background: rgba(234,88,12,0.1);   color: #ea580c; }
+    .badge-green  { background: rgba(22,163,74,0.1);   color: #16a34a; }
+    .badge-blue   { background: rgba(26,68,232,0.1);   color: var(--blue); }
+
+    /* ── SLIDE 5 — CTA ── */
+    .cta-wrap { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .cta-heading {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(30px, 4.5vw, 52px);
+      line-height: 1.1; color: var(--text);
+      margin-bottom: 14px;
+    }
+    .cta-sub {
+      font-size: 16px; color: var(--muted);
+      margin-bottom: 36px; line-height: 1.6;
+    }
+    .cta-card {
+      background: rgba(255,255,255,0.72);
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: 0 8px 32px rgba(26,68,232,0.08);
+      border-radius: 20px;
+      padding: 28px 40px;
+      display: flex; gap: 48px;
+      margin-bottom: 32px;
+    }
+    .cta-item { display: flex; flex-direction: column; gap: 3px; }
+    .cta-label { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+    .cta-val   { font-size: 15px; font-weight: 500; color: var(--text); }
+    .cta-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, #1a44e8 0%, #3a5ff5 60%, #5b7aff 100%);
+      box-shadow: 0 4px 14px rgba(26,68,232,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+      color: #fff; border: none; border-radius: 12px;
+      padding: 13px 28px; font-size: 15px; font-weight: 600;
+      font-family: inherit; cursor: pointer; text-decoration: none;
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+    .cta-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,68,232,0.35), inset 0 1px 0 rgba(255,255,255,0.2); }
+
+    @media (max-width: 640px) {
+      .slide { padding: 24px 20px; }
+      .cards { grid-template-columns: 1fr; }
+      .cta-card { flex-direction: column; gap: 16px; padding: 20px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="logo-fixed">
+  <img src="/logo-icon.png" alt="" onerror="this.style.display='none'" />
+  <span>CloudCast Analytics</span>
+</div>
+<div class="counter" id="counter">1 / 5</div>
+
+<div class="deck">
+
+  <!-- SLIDE 1 — COVER -->
+  <div class="slide active" data-index="0">
+    <p class="eyebrow">CloudCast Analytics</p>
+    <h1 class="s1-heading">Weet elke ochtend<br><em>hoe druk het wordt.</em></h1>
+    <p class="s1-sub">Dagelijkse bezoekers- en omzetforecast voor leisure, horeca en recreatie.</p>
+    <div class="s1-badge">
+      ☁️ Weer · 📊 Data · 🧠 Forecast
+    </div>
+  </div>
+
+  <!-- SLIDE 2 — PROBLEEM -->
+  <div class="slide" data-index="1">
+    <p class="eyebrow" style="align-self:flex-start;max-width:760px;width:100%">Het probleem</p>
+    <h2 class="slide-heading">Planning op gevoel<br>kost geld.</h2>
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">📉</div>
+        <div class="card-title">Te veel personeel</div>
+        <div class="card-body">Op een stille dag betaal je mensen die er niet hoeven te zijn. Direct zichtbaar op de loonkost.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">😤</div>
+        <div class="card-title">Te weinig personeel</div>
+        <div class="card-body">Op een drukke dag: wachtrijen, afhakers, slechte reviews. Omzet die je niet terugkrijgt.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📅</div>
+        <div class="card-title">Vorig jaar als basis</div>
+        <div class="card-body">Het weer was anders. De vakantie valt anders. Vorig jaar klopt niet voor volgende week.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3 — WAT WE DOEN -->
+  <div class="slide" data-index="2">
+    <p class="eyebrow" style="align-self:flex-start;max-width:660px;width:100%">Wat CloudCast doet</p>
+    <h2 class="slide-heading" style="max-width:660px">Eén forecast.<br>Elke ochtend klaar.</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-title">We koppelen jouw historische data</div>
+          <div class="step-body">Omzet, bezoekers, personeelsbezetting — wat je al hebt is genoeg om mee te starten.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-title">We combineren dat met het weerbericht</div>
+          <div class="step-body">Temperatuur, neerslag, zonuren — voor jouw locatie, 14 dagen vooruit.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <div class="step-title">Jij ziet elke ochtend wat je kan verwachten</div>
+          <div class="step-body">Bezoekers, omzet, personeel én voorraad — per dag, overzichtelijk op één scherm.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4 — DASHBOARD MOCK -->
+  <div class="slide" data-index="3">
+    <div class="mock-wrap">
+      <p class="eyebrow" style="margin-bottom:6px">Hoe het eruitziet</p>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:clamp(20px,2.5vw,32px);color:var(--text);margin-bottom:16px;line-height:1.2">
+        14-daagse forecast — elke ochtend automatisch bijgewerkt
+      </h2>
+      <p style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">Voorbeeld dashboard</p>
+      <div class="mock-card">
+        <div class="mock-topbar">
+          <div class="mock-dot"></div>
+          Forecast — komende 14 dagen
+        </div>
+        <table class="mock-table">
+          <thead>
+            <tr>
+              <th>Dag</th>
+              <th>Weer</th>
+              <th>Bezoekers</th>
+              <th>Omzet</th>
+              <th>Personeel</th>
+              <th>Voorraad</th>
+              <th>Niveau</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Wo</td>
+              <td>⛅ 19°C</td>
+              <td>210</td>
+              <td>€ 7.350</td>
+              <td>6 FTE</td>
+              <td style="color:var(--muted)">Standaard</td>
+              <td><span class="badge badge-green">Normaal</span></td>
+            </tr>
+            <tr class="hl">
+              <td><strong>Za</strong></td>
+              <td>☀️ 28°C</td>
+              <td><strong>890</strong></td>
+              <td><strong>€ 31.150</strong></td>
+              <td><strong>22 FTE</strong></td>
+              <td style="color:#dc2626;font-weight:500">↑ Ophogen</td>
+              <td><span class="badge badge-red">Heel druk</span></td>
+            </tr>
+            <tr>
+              <td>Zo</td>
+              <td>☀️ 27°C</td>
+              <td>740</td>
+              <td>€ 25.900</td>
+              <td>19 FTE</td>
+              <td style="color:#ea580c">↑ Ophogen</td>
+              <td><span class="badge badge-orange">Druk</span></td>
+            </tr>
+            <tr>
+              <td>Ma</td>
+              <td>🌧️ 16°C</td>
+              <td>140</td>
+              <td>€ 4.900</td>
+              <td>4 FTE</td>
+              <td style="color:var(--muted)">Afbouwen</td>
+              <td><span class="badge badge-blue">Rustig</span></td>
+            </tr>
+            <tr>
+              <td>Za +1</td>
+              <td>⛅ 22°C</td>
+              <td>420</td>
+              <td>€ 14.700</td>
+              <td>11 FTE</td>
+              <td style="color:var(--muted)">Standaard</td>
+              <td><span class="badge badge-green">Normaal</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5 — CTA -->
+  <div class="slide" data-index="4">
+    <div class="cta-wrap">
+      <p class="eyebrow">Interesse?</p>
+      <h2 class="cta-heading">Laten we het<br>laten zien.</h2>
+      <p class="cta-sub">20 minuten. Geen verplichtingen.<br>Wel een concreet beeld van wat het voor jou oplevert.</p>
+      <div class="cta-card">
+        <div class="cta-item">
+          <span class="cta-label">Contact</span>
+          <span class="cta-val">schaekers.sven@gmail.com</span>
+        </div>
+        <div class="cta-item">
+          <span class="cta-label">Bedrijf</span>
+          <span class="cta-val">CloudCast Analytics</span>
+        </div>
+      </div>
+      <a class="cta-btn" href="mailto:schaekers.sven@gmail.com?subject=Demo%20aanvragen">
+        Plan een gesprek →
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<!-- Navigation -->
+<div class="nav">
+  <button class="nav-btn" id="prev">←</button>
+  <div class="nav-dots" id="dots"></div>
+  <button class="nav-btn" id="next">→</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide')
+  const dotsEl = document.getElementById('dots')
+  const counter = document.getElementById('counter')
+  let current = 0
+
+  slides.forEach((_, i) => {
+    const d = document.createElement('div')
+    d.className = 'dot' + (i === 0 ? ' active' : '')
+    d.addEventListener('click', () => go(i))
+    dotsEl.appendChild(d)
+  })
+
+  function go(n) {
+    slides[current].classList.remove('active')
+    dotsEl.children[current].classList.remove('active')
+    current = (n + slides.length) % slides.length
+    slides[current].classList.add('active')
+    dotsEl.children[current].classList.add('active')
+    counter.textContent = `${current + 1} / ${slides.length}`
+  }
+
+  document.getElementById('prev').addEventListener('click', () => go(current - 1))
+  document.getElementById('next').addEventListener('click', () => go(current + 1))
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(current + 1)
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(current - 1)
+  })
+
+  let tx = 0
+  document.addEventListener('touchstart', e => { tx = e.touches[0].clientX })
+  document.addEventListener('touchend',   e => {
+    const dx = tx - e.changedTouches[0].clientX
+    if (Math.abs(dx) > 40) go(dx > 0 ? current + 1 : current - 1)
+  })
+</script>
+</body>
+</html>
