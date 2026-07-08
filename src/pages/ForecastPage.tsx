@@ -100,18 +100,20 @@ export default function ForecastPage() {
     }
   }, [loaded])
 
-  function runForecast() {
+  async function runForecast() {
     setLoading(true)
-    setTimeout(() => {
-      const result = generateForecast(
+    try {
+      const result = await generateForecast(
         observations,
         horizon,
         staffingRules,
         selectedLocation?.id ?? 'demo-location',
+        selectedLocation?.city ?? 'Genk',
       )
       setForecast(result)
+    } finally {
       setLoading(false)
-    }, 400)
+    }
   }
 
   return (
@@ -195,8 +197,9 @@ export default function ForecastPage() {
           <div className="flex items-start gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
             <Info size={14} className="flex-shrink-0 mt-0.5" />
             <span>
-              Deze voorspelling is een onderbouwde verwachting op basis van historische patronen, seizoen en weer.
-              Het is geen garantie. Houd rekening met lokale omstandigheden die het model niet kent.
+              {forecast[0]?.key_reason === 'XGBoost voorspelling'
+                ? 'Voorspelling gegenereerd met XGBoost op basis van jouw historische data, verrijkt met weer- en kalenderfeatures.'
+                : 'Voorspelling op basis van historische patronen, seizoen en weer. Verbind de backend voor XGBoost-precisie.'}
             </span>
           </div>
         </>

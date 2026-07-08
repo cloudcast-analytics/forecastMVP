@@ -40,41 +40,17 @@ export const DEMO_LOCATION_2: Location = {
 }
 
 export const DEMO_STAFFING_RULES: StaffingRule[] = [
-  {
-    id: 'rule-1',
-    company_id: 'demo-company',
-    location_id: 'demo-location',
-    min_visitors: 0,
-    max_visitors: 100,
-    recommended_staff: 6,
-    label: 'Rustig',
-  },
-  {
-    id: 'rule-2',
-    company_id: 'demo-company',
-    location_id: 'demo-location',
-    min_visitors: 100,
-    max_visitors: 250,
-    recommended_staff: 10,
-    label: 'Normaal',
-  },
-  {
-    id: 'rule-3',
-    company_id: 'demo-company',
-    location_id: 'demo-location',
-    min_visitors: 250,
-    max_visitors: 500,
-    recommended_staff: 16,
-    label: 'Druk',
-  },
-  {
-    id: 'rule-4',
-    company_id: 'demo-company',
-    location_id: 'demo-location',
-    min_visitors: 500,
-    recommended_staff: 22,
-    label: 'Zeer druk',
-  },
+  { id: 'rule-1', company_id: 'demo-company', location_id: 'demo-location', min_visitors: 0,   max_visitors: 100, recommended_staff: 6,  label: 'Rustig'    },
+  { id: 'rule-2', company_id: 'demo-company', location_id: 'demo-location', min_visitors: 100, max_visitors: 250, recommended_staff: 10, label: 'Normaal'   },
+  { id: 'rule-3', company_id: 'demo-company', location_id: 'demo-location', min_visitors: 250, max_visitors: 500, recommended_staff: 16, label: 'Druk'      },
+  { id: 'rule-4', company_id: 'demo-company', location_id: 'demo-location', min_visitors: 500,                    recommended_staff: 22, label: 'Zeer druk' },
+]
+
+export const DEMO_STAFFING_RULES_2: StaffingRule[] = [
+  { id: 'rule2-1', company_id: 'demo-company', location_id: 'demo-location-2', min_visitors: 0,   max_visitors: 75,  recommended_staff: 4,  label: 'Rustig'    },
+  { id: 'rule2-2', company_id: 'demo-company', location_id: 'demo-location-2', min_visitors: 75,  max_visitors: 200, recommended_staff: 7,  label: 'Normaal'   },
+  { id: 'rule2-3', company_id: 'demo-company', location_id: 'demo-location-2', min_visitors: 200, max_visitors: 400, recommended_staff: 12, label: 'Druk'      },
+  { id: 'rule2-4', company_id: 'demo-company', location_id: 'demo-location-2', min_visitors: 400,                    recommended_staff: 18, label: 'Zeer druk' },
 ]
 
 export const DEMO_DEPARTMENTS: Department[] = [
@@ -102,6 +78,13 @@ export const DEMO_LOCATION_DEPARTMENTS: LocationDepartment[] = [
   { id: 'ld-bar',    location_id: 'demo-location', department_id: 'dept-bar',    is_active: false },
 ]
 
+export const DEMO_LOCATION_DEPARTMENTS_2: LocationDepartment[] = [
+  { id: 'ld2-keuken', location_id: 'demo-location-2', department_id: 'dept-keuken', is_active: true  },
+  { id: 'ld2-zaal',   location_id: 'demo-location-2', department_id: 'dept-zaal',   is_active: true  },
+  { id: 'ld2-kassa',  location_id: 'demo-location-2', department_id: 'dept-kassa',  is_active: false },
+  { id: 'ld2-bar',    location_id: 'demo-location-2', department_id: 'dept-bar',    is_active: true  },
+]
+
 export const DEMO_LOCATION_ROLES: LocationRole[] = [
   { id: 'lr-chef',            location_id: 'demo-location', role_id: 'role-chef',            headcount: 1 },
   { id: 'lr-souschef',        location_id: 'demo-location', role_id: 'role-souschef',        headcount: 2 },
@@ -109,6 +92,14 @@ export const DEMO_LOCATION_ROLES: LocationRole[] = [
   { id: 'lr-kelner',          location_id: 'demo-location', role_id: 'role-kelner',          headcount: 6 },
   { id: 'lr-gastheer',        location_id: 'demo-location', role_id: 'role-gastheer',        headcount: 2 },
   { id: 'lr-kassamedewerker', location_id: 'demo-location', role_id: 'role-kassamedewerker', headcount: 3 },
+]
+
+export const DEMO_LOCATION_ROLES_2: LocationRole[] = [
+  { id: 'lr2-chef',    location_id: 'demo-location-2', role_id: 'role-chef',    headcount: 1 },
+  { id: 'lr2-kok',     location_id: 'demo-location-2', role_id: 'role-kok',     headcount: 2 },
+  { id: 'lr2-kelner',  location_id: 'demo-location-2', role_id: 'role-kelner',  headcount: 3 },
+  { id: 'lr2-gastheer',location_id: 'demo-location-2', role_id: 'role-gastheer',headcount: 1 },
+  { id: 'lr2-barman',  location_id: 'demo-location-2', role_id: 'role-barman',  headcount: 2 },
 ]
 
 export const DEMO_STAFFING_EVALUATIONS: DailyStaffingEvaluation[] = []
@@ -119,7 +110,8 @@ function seededRand(seed: number): number {
   return x - Math.floor(x)
 }
 
-export function getDemoObservations(): DailyObservation[] {
+export function getDemoObservations(locationId = 'demo-location'): DailyObservation[] {
+  const scale = locationId === 'demo-location-2' ? 0.65 : 1.0
   const observations: DailyObservation[] = []
 
   // Belgian public holidays 2025
@@ -197,7 +189,7 @@ export function getDemoObservations(): DailyObservation[] {
     if (isPubHoliday) baseRevenue *= 1.15
     if (isSchoolHol && !isWeekend) baseRevenue *= 1.1
 
-    const revenue = Math.round(baseRevenue)
+    const revenue = Math.round(baseRevenue * scale)
     const visitors = Math.round(revenue / 35)
 
     // Staff
@@ -208,9 +200,9 @@ export function getDemoObservations(): DailyObservation[] {
     else staff = 5 + Math.round(rand2 * 3)
 
     observations.push({
-      id: `demo-obs-${dateStr}`,
+      id: `demo-obs-${locationId}-${dateStr}`,
       company_id: 'demo-company',
-      location_id: 'demo-location',
+      location_id: locationId,
       date: dateStr,
       revenue,
       visitors,

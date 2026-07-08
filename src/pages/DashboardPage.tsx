@@ -10,6 +10,7 @@ import { getObservations, getStaffingRules } from '../services/supabaseService'
 import { generateForecast } from '../services/forecastService'
 import { getMockWeather } from '../services/weatherService'
 import type { DailyObservation, StaffingRule } from '../types/database'
+import type { ForecastDay } from '../types/forecast'
 import { formatEuro } from '../lib/utils'
 
 // Typisch dagpatroon voor outdoor waterfront (% van dagelijkse bezoekers per uur)
@@ -116,9 +117,12 @@ export default function DashboardPage() {
 
   const todayEst = useMemo(() => getTodayEstimate(observations, rules), [observations, rules])
 
-  const tomorrowForecast = useMemo(() => {
-    if (observations.length === 0) return null
-    return generateForecast(observations, 1, rules, selectedLocation?.id ?? 'x')[0] ?? null
+  const [tomorrowForecast, setTomorrowForecast] = useState<ForecastDay | null>(null)
+  useEffect(() => {
+    if (observations.length === 0) { setTomorrowForecast(null); return }
+    generateForecast(observations, 1, rules, selectedLocation?.id ?? 'x', selectedLocation?.city ?? 'Genk')
+      .then(results => setTomorrowForecast(results[0] ?? null))
+      .catch(() => setTomorrowForecast(null))
   }, [observations, rules, selectedLocation])
 
   const hourlyData = useMemo(() => {
