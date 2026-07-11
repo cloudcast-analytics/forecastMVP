@@ -1,99 +1,74 @@
 # Overzicht Aanpassingen — CloudCast MVP
 
-Dit document bevat alle geplande aanpassingen en toevoegingen aan de CloudCast MVP-applicatie. Per punt staat de status, een beschrijving van wat er moet gebeuren, en wie eraan heeft gewerkt.
-
-**Legende status:**
-- [ ] Nog niet gestart
-- [~] In uitvoering
-- [x] Afgerond
+> **Voor alle medewerkers die aan dit project werken:**
+> Elke aanpassing aan de code — groot of klein — moet hier worden gedocumenteerd.
+> Voeg een nieuwe regel toe onder de juiste datum met een korte beschrijving van wat er gewijzigd is en je naam.
+> Gebruik het formaat hieronder als richtlijn.
 
 ---
 
-## 1. Organisatiestructuur Module
+## Changelog
 
-**Status:** [ ] Nog niet gestart
-**Bewerkt door:** —
-**Afgerond door:** —
+### 2026-07-08 — cloudcast-analytics (AI)
+- **Per-locatie data in demo-modus** — Elke locatie heeft nu zijn eigen personeelsregels, afdelingen en rollen. Wisselen van locatie geeft écht andere configuratie; mutaties worden per locatie bijgehouden in geheugen.
+- **XGBoost backend koppeling** — `forecastService.ts` is nu async en roept eerst het `POST /forecast/json` endpoint aan op de FastAPI backend. Valt automatisch terug op het statistisch model als de backend niet bereikbaar is. Stel `VITE_FORECAST_API_URL` in als omgevingsvariabele om de koppeling te activeren.
+- **FastAPI: CORS + nieuw forecast endpoint** — `app/routes/forecast.py` toegevoegd met `POST /forecast/json` endpoint. CORS middleware ingesteld zodat de React frontend requests mag doen.
 
-Configureerbare bedrijfsstructuur met afdelingen en functies. Elke onderneming legt een eigen basis-template vast met afdelingen (bv. Keuken, Zaal, Kassa, Bar) en functies per afdeling (bv. Chef-kok, Kelner, Kassamedewerker). De basis geldt bedrijfsbreed maar is per locatie aanpasbaar — afdelingen kunnen aan/uit gezet worden en functies kunnen per locatie verschillen.
+### 2026-06-30 — cloudcast-analytics (AI)
+- **Manager dashboard** — Dagplanning, bezettingsstatus per uur en voorraadbestellingsmail toegevoegd.
+- **Gespreksgids Waterfront Genk** — Verkoopdocument toegevoegd als referentie.
 
-**Concrete onderdelen:**
-- Nieuwe pagina "Organisatie" in de sidebar
-- CRUD voor afdelingen en functies per bedrijf
-- Per locatie: activeren/deactiveren van afdelingen, headcount per functie instellen
-- Dagelijkse bezettingsevaluatie per afdeling (onderbezet / goed / overbezet) — snel en minimale belasting voor de ondernemer
-- Evaluatiedata wordt opgeslagen als toekomstige input voor het forecasting-model
+### 2026-06-29 — cloudcast-analytics (AI)
+- **Cloudy AI-assistent** — Zwevende chatbot beschikbaar op alle pagina's, context-aware per pagina.
+- **Performance dashboard** — KPI's, omzetgrafieken en historische vergelijking toegevoegd.
+- **Upload wizard** — Stapsgewijze begeleidde uploadflow met kolomherkenning en validatie.
+- **Forecast advies** — Automatische tekstadviezen naast de forecast-grafiek ("Cloudy adviseert").
+- **Bugfixes** — Duplicate observaties per datum gefixed (upsert on conflict), TS build errors opgelost, forecast confidence band zichtbaar gemaakt.
 
----
+### 2026-06-28 — cloudcast-analytics (AI)
+- **Hamburger naar sidebar** — Toggle-knop verplaatst van rechtsboven (mobile topbar) naar bovenaan de sidebar. Mobile topbar volledig verwijderd; sidebar altijd zichtbaar op alle schermformaten.
+- **Collapsible sidebar** — Desktop sidebar inklapbaar (240px ↔ 64px icon-only), keuze bewaard in localStorage.
+- **Locatieselector in sidebar** — Globale dropdown in het bedrijfsblok; plain tekst bij 1 locatie, dropdown bij 2+.
+- **Mobile drawer** — Consistent gemaakt met bedrijfsblok, navigatie en account/uitloggen zones.
+- **Nav labels** — Labels gelijkgetrokken tussen desktop sidebar en mobile drawer.
+- **Demo tweede locatie** — "Waterfront Hasselt" toegevoegd zodat de locatieselector zichtbaar is in de demo.
+- **Demo upload fix** — CSV-uploads in demo-modus worden opgeslagen in geheugen; forecast gebruikt die data.
 
-## 2. Data Upload met Cloudy Wizard
+### 2026-06-27 — cloudcast-analytics (AI)
+- **Organisatiestructuur module** — Volledige nieuwe pagina "Organisatie" met twee tabs:
+  - *Structuur*: afdelingen en functies per bedrijf aanmaken/verwijderen, per locatie activeren/deactiveren, headcount per functie instellen.
+  - *Bezetting*: dagelijkse evaluatie per afdeling (onderbezet/goed/overbezet), opgeslagen als forecastinput.
+- **SQL migratie** — Nieuwe Supabase tabellen: `departments`, `roles`, `location_departments`, `location_roles`, `daily_staffing_evaluations`.
+- **Bugfix headcount** — Input-veld remount bij locatiewissel zodat `defaultValue` niet verouderd raakt.
 
-**Status:** [ ] Nog niet gestart
-**Bewerkt door:** —
-**Afgerond door:** —
-
-De huidige upload-flow vervangen door een stapsgewijze wizard begeleid door "Cloudy" (de AI-assistent). Cloudy legt stap voor stap uit welke datastructuur nodig is (kolommen, formaat, minimale hoeveelheid data), valideert het geüploade bestand, en helpt bij het mappen van kolommen naar de juiste velden. De wizard minimaliseert uploadfouten en maakt het proces toegankelijk voor niet-technische gebruikers.
-
-**Concrete onderdelen:**
-- Stapsgewijze wizard UI met Cloudy-begeleiding
-- Uitleg per stap over verwachte datastructuur
-- Automatische kolomherkenning en validatie
-- Duidelijke foutmeldingen en suggesties bij problemen
-- Integratie met het bestaande parsing/validatie-systeem
-
----
-
-## 3. Forecast Dashboard + Cloudy Advies
-
-**Status:** [ ] Nog niet gestart
-**Bewerkt door:** —
-**Afgerond door:** —
-
-Het bestaande forecast dashboard uitbreiden met automatisch gegenereerde adviezen en een Cloudy chatbot-integratie. De forecast toont niet alleen een grafiek en tabel, maar geeft ook concrete, bruikbare adviezen (bv. "Donderdag +18% omzet verwacht t.o.v. vorige week — plan 2 extra medewerkers in voor de zaal"). Via Cloudy kan de gebruiker doorvragen over de forecast. Daarnaast wordt historische terugblik toegevoegd — de gebruiker kan niet alleen de toekomst bekijken maar ook terug navigeren in de tijd.
-
-**Concrete onderdelen:**
-- Automatische tekstuele adviezen naast de forecast-grafiek
-- Adviezen gekoppeld aan personeelsplanning en omzetverwachting
-- Cloudy chatbot-integratie op de forecast-pagina
-- Historische navigatie: tijdsperiode-selector om terug te kijken
-- Vergelijking huidige forecast met werkelijke resultaten uit het verleden
+### 2026-06-24 — cloudcast-analytics (AI)
+- **Initial commit** — CloudCast MVP opgeleverd: authenticatie, upload, forecast, personeelsregels, locatie/bedrijfsbeheer, dashboard.
 
 ---
 
-## 4. Performance Dashboard + Historische Omzet
+## Geplande Features (Roadmap)
 
-**Status:** [ ] Nog niet gestart
-**Bewerkt door:** —
-**Afgerond door:** —
+### 1. Organisatiestructuur Module
+**Status:** [x] Afgerond (2026-06-27)
 
-Een nieuw performance dashboard met KPI's en historische omzetgegevens. Overzicht van trends over weken en maanden, vergelijkingen (deze week vs. vorige week, dit jaar vs. vorig jaar), gekoppeld aan weer- en bezettingsdata. Inclusief een Cloudy chatbot-paneel om vragen te stellen over prestaties en patronen in de data.
+### 2. Data Upload met Cloudy Wizard
+**Status:** [x] Afgerond (2026-06-29)
 
-**Concrete onderdelen:**
-- KPI-kaarten: omzet, groei, gemiddelde dagomzet, beste/slechtste dag
-- Omzetgrafieken met selecteerbare tijdsperiodes
-- Vergelijkingsmodus: periode vs. periode
-- Weer-correlatie: hoe beïnvloedde het weer de omzet?
-- Bezettingsdata: link tussen personeel en prestaties
-- Cloudy chatbot-integratie voor vragen over performance
+### 3. Forecast Dashboard + Cloudy Advies
+**Status:** [x] Afgerond (2026-06-29)
 
----
+### 4. Performance Dashboard + Historische Omzet
+**Status:** [x] Afgerond (2026-06-29)
 
-## 5. Cloudy — Globale AI-Assistent
+### 5. Cloudy — Globale AI-Assistent
+**Status:** [x] Afgerond (2026-06-29)
 
-**Status:** [ ] Nog niet gestart
-**Bewerkt door:** —
-**Afgerond door:** —
-
-Een zwevende chatbot-knop (rechtsonder) die op elke pagina beschikbaar is. Cloudy is context-aware: afhankelijk van de pagina waarop de gebruiker zich bevindt, past Cloudy het gesprek en de hulp aan. Op de upload-pagina helpt Cloudy met datastructuur en validatie, op forecast geeft Cloudy advies over personeelsplanning, op performance beantwoordt Cloudy vragen over historische trends en patronen.
-
-**Concrete onderdelen:**
-- Zwevende knop component (rechtsonder, altijd zichtbaar)
-- Chat-interface met berichtengeschiedenis
-- Context-detection per pagina (upload, forecast, performance, organisatie)
-- Pagina-specifieke prompts en hulpfuncties
-- Persoonlijke, vriendelijke toon ("Cloudy" als karakter)
-- Integratie met een LLM-backend voor intelligente antwoorden
+### 6. XGBoost Backend Koppeling
+**Status:** [~] In uitvoering — code klaar, backend deployment nodig
+- React roept `VITE_FORECAST_API_URL/forecast/json` aan
+- FastAPI backend (`cloudcastgit/`) bevat het XGBoost model en het endpoint
+- Nog te doen: backend deployen op Railway en `VITE_FORECAST_API_URL` instellen
 
 ---
 
-*Laatst bijgewerkt: 25 juni 2026*
+*Laatst bijgewerkt: 2026-07-08*
