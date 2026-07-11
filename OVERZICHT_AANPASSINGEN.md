@@ -14,11 +14,11 @@
 - **XGBoost backend koppeling** — `forecastService.ts` is nu async en roept eerst het `POST /forecast/json` endpoint aan op de FastAPI backend. Valt automatisch terug op het statistisch model als de backend niet bereikbaar is. Stel `VITE_FORECAST_API_URL` in als omgevingsvariabele om de koppeling te activeren.
 - **FastAPI: CORS + nieuw forecast endpoint** — `app/routes/forecast.py` toegevoegd met `POST /forecast/json` endpoint. CORS middleware ingesteld zodat de React frontend requests mag doen.
 
-### 30-06-2026 — Vini G
+### 30-06-2026 — Sven Schakers
 - **Manager dashboard** — Dagplanning, bezettingsstatus per uur en voorraadbestellingsmail toegevoegd.
 - **Gespreksgids Waterfront Genk** — Verkoopdocument toegevoegd als referentie.
 
-### 29-06-2026 — Vini G
+### 29-06-2026 — Sven Schakers
 - **Cloudy AI-assistent** — Zwevende chatbot beschikbaar op alle pagina's, context-aware per pagina.
 - **Performance dashboard** — KPI's, omzetgrafieken en historische vergelijking toegevoegd.
 - **Upload wizard** — Stapsgewijze begeleidde uploadflow met kolomherkenning en validatie.
