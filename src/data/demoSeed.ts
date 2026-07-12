@@ -1,6 +1,8 @@
 import type { Company, DailyObservation, Department, DailyStaffingEvaluation, Location, LocationDepartment, LocationRole, Role, StaffingRule } from '../types/database'
 import type { DepartmentStaffingRule } from '../types/staffing'
 import { getWeekNumber, getSeason } from '../lib/utils'
+import { isPublicHoliday, isSchoolHoliday } from '../lib/calendar'
+import { computeStaffing, getDemandLevel } from '../services/staffingService'
 
 export const DEMO_COMPANY: Company = {
   id: 'demo-company',
@@ -111,118 +113,103 @@ function seededRand(seed: number): number {
   return x - Math.floor(x)
 }
 
+// Format a Date at local midnight as YYYY-MM-DD without the UTC shift that
+// d.toISOString() introduces (this machine runs UTC+2, so toISOString()
+// would roll local midnight back to the previous day's date string).
+function toLocalDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+// Evenementen met verwacht aantal gasten (drempel voor 3e persoon buiten: 50)
+function demoEvents(year: number): Record<string, { name: string; guests: number }> {
+  return {
+    [`${year}-04-26`]: { name: 'Lente-opening',  guests: 40 },
+    [`${year}-05-14`]: { name: 'Hemelvaart BBQ', guests: 60 },
+    [`${year}-05-30`]: { name: 'Privéfeest',     guests: 80 },
+    [`${year}-06-20`]: { name: 'Zomerfestival',  guests: 120 },
+    [`${year}-06-27`]: { name: 'Privéfeest',     guests: 35 },
+    [`${year}-07-05`]: { name: 'Waterski Cup',   guests: 90 },
+    [`${year}-07-18`]: { name: 'Privéfeest',     guests: 55 },
+    [`${year}-08-08`]: { name: 'Zomerkermis',    guests: 100 },
+    [`${year}-08-22`]: { name: 'Cocktailavond',  guests: 45 },
+  }
+}
+
+// Terraszaak-drukte per maand (april rustig opstarten, hoogzomer piek)
+const MONTH_FACTOR: Record<number, number> = { 4: 0.75, 5: 0.9, 6: 1.05, 7: 1.15, 8: 1.15, 9: 0.85 }
+
 export function getDemoObservations(locationId = 'demo-location'): DailyObservation[] {
-  const scale = locationId === 'demo-location-2' ? 0.65 : 1.0
-  const observations: DailyObservation[] = []
+  const scale = locationId === 'demo-location-2' ? 0.7 : 1.0
+  const rules = locationId === 'demo-location-2' ? DEMO_DEPARTMENT_STAFFING_RULES_2 : DEMO_DEPARTMENT_STAFFING_RULES
+  const maxCapacity = locationId === 'demo-location-2' ? 800 : 1200
 
-  // Belgian public holidays 2025
-  const publicHolidays = new Set([
-    '2025-01-01', '2025-04-21', '2025-05-01', '2025-05-29',
-    '2025-06-09', '2025-07-21', '2025-08-15', '2025-11-01',
-    '2025-11-11', '2025-12-25',
-  ])
+  // Seizoenszaak: open sinds 1 april dit jaar, data t/m gisteren
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+  const year = yesterday.getFullYear()
+  const start = new Date(year, 3, 1) // 1 april
+  const events = demoEvents(year)
 
-  // Belgian school holidays 2025 (approximate)
-  const schoolHolidayRanges: [string, string][] = [
-    ['2025-01-01', '2025-01-05'],
-    ['2025-02-24', '2025-03-02'],
-    ['2025-04-14', '2025-04-27'],
-    ['2025-07-01', '2025-08-31'],
-    ['2025-10-27', '2025-11-02'],
-    ['2025-12-22', '2025-12-31'],
-  ]
-
-  function isSchoolHoliday(dateStr: string): boolean {
-    return schoolHolidayRanges.some(([start, end]) => dateStr >= start && dateStr <= end)
-  }
-
-  // Special events on ~10 days
-  const specialEvents: Record<string, string> = {
-    '2025-03-15': 'Foodtruck Festival',
-    '2025-04-26': 'Paasmarkt',
-    '2025-05-10': 'Moederdag Event',
-    '2025-06-21': 'Zomerfestival',
-    '2025-07-04': 'Koninginneweer',
-    '2025-07-21': 'Nationale Feestdag',
-    '2025-08-09': 'Zomerkermis',
-    '2025-09-20': 'Najaarsmarkt',
-    '2025-10-31': 'Halloween',
-    '2025-12-06': 'Sinterklaas',
-    '2025-12-13': 'Kerstmarkt',
-  }
-
-  const start = new Date('2025-01-01')
-  const end = new Date('2025-12-31')
-
-  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    const dateStr = d.toISOString().split('T')[0]
+  // Pass 1: bezoekers en omzet per dag
+  type DayDraft = { dateStr: string; d: Date; visitors: number; revenue: number; event?: { name: string; guests: number } }
+  const drafts: DayDraft[] = []
+  for (let d = new Date(start); d <= yesterday; d.setDate(d.getDate() + 1)) {
+    const dateStr = toLocalDateStr(d)
     const dayOfWeek = d.getDay()
     const month = d.getMonth() + 1
-    const year = d.getFullYear()
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
-    const isPubHoliday = publicHolidays.has(dateStr)
-    const isSchoolHol = isSchoolHoliday(dateStr)
-    const hasEvent = dateStr in specialEvents
+    const event = events[dateStr]
 
-    // Seed based on date for determinism
     const seed = year * 10000 + month * 100 + d.getDate()
     const rand1 = seededRand(seed)
     const rand2 = seededRand(seed + 1000)
     const rand3 = seededRand(seed + 2000)
 
-    // Base revenue
-    let baseRevenue = isWeekend
-      ? 15000 + rand1 * 17000   // 15000–32000
-      : 5000 + rand2 * 3000      // 5000–8000
+    // Bezoekers: terraszaak-profiel
+    let visitors = isWeekend ? 220 + rand1 * 160 : 90 + rand1 * 70
+    visitors *= MONTH_FACTOR[month] ?? 1.0
 
-    // Season multipliers
-    const isSummer = month >= 6 && month <= 8
-    const isWinter = month <= 2 || month === 12
-    if (isSummer) baseRevenue *= 1.4
-    if (isWinter) baseRevenue *= 0.6
-
-    // Rain: ~30% of days
     const isRainy = rand3 < 0.3
-    if (isRainy) baseRevenue *= 0.8
+    if (isRainy) visitors *= 0.45 // regen halveert een terraszaak
 
-    // Events
-    if (hasEvent) baseRevenue *= 1.3
-    if (isPubHoliday) baseRevenue *= 1.15
-    if (isSchoolHol && !isWeekend) baseRevenue *= 1.1
+    if (event) visitors *= 1.2
+    if (isPublicHoliday(dateStr)) visitors *= 1.2
+    if (isSchoolHoliday(dateStr) && !isWeekend) visitors *= 1.15
 
-    const revenue = Math.round(baseRevenue * scale)
-    const visitors = Math.round(revenue / 35)
+    const finalVisitors = Math.round(visitors * scale)
+    const revenuePerVisitor = 10.5 + rand2 * 3 // €10,50–13,50 (drankgericht terras)
+    drafts.push({ dateStr, d: new Date(d), visitors: finalVisitors, revenue: Math.round(finalVisitors * revenuePerVisitor), event })
+  }
 
-    // Staff
-    let staff: number
-    if (visitors > 500) staff = 18 + Math.round(rand1 * 4)
-    else if (visitors > 250) staff = 14 + Math.round(rand2 * 4)
-    else if (visitors > 100) staff = 8 + Math.round(rand1 * 4)
-    else staff = 5 + Math.round(rand2 * 3)
+  // Pass 2: drukteniveau + bezetting uit dezelfde engine als dashboard/forecast → per constructie consistent
+  const avgRevenue = drafts.reduce((s, x) => s + x.revenue, 0) / Math.max(drafts.length, 1)
 
-    observations.push({
+  return drafts.map(({ dateStr, d, visitors, revenue, event }) => {
+    const demand = getDemandLevel(revenue, avgRevenue)
+    const staff = computeStaffing(rules, demand, event?.guests).total
+    const dayOfWeek = d.getDay()
+    const month = d.getMonth() + 1
+    return {
       id: `demo-obs-${locationId}-${dateStr}`,
       company_id: 'demo-company',
       location_id: locationId,
       date: dateStr,
       revenue,
       visitors,
-      transactions: Math.round(visitors * 0.6),
+      transactions: Math.round(visitors * 0.9),
       staff_scheduled: staff,
       staff_needed: staff,
-      occupancy_rate: Math.min(100, Math.round((visitors / 1200) * 100)),
+      occupancy_rate: Math.min(100, Math.round((visitors / maxCapacity) * 100)),
       day_of_week: dayOfWeek,
       month,
-      year,
+      year: d.getFullYear(),
       week_number: getWeekNumber(d),
       season: getSeason(month),
-      is_weekend: isWeekend,
-      is_holiday: isPubHoliday || isSchoolHol,
-      is_school_holiday: isSchoolHol,
-      is_public_holiday: isPubHoliday,
-      special_event_name: hasEvent ? specialEvents[dateStr] : undefined,
-    })
-  }
-
-  return observations
+      is_weekend: dayOfWeek === 0 || dayOfWeek === 6,
+      is_holiday: isPublicHoliday(dateStr) || isSchoolHoliday(dateStr),
+      is_school_holiday: isSchoolHoliday(dateStr),
+      is_public_holiday: isPublicHoliday(dateStr),
+      special_event_name: event?.name,
+    }
+  })
 }
