@@ -328,8 +328,8 @@ export async function upsertDepartmentStaffingRule(
   if (isDemo) {
     const store = demoStores.departmentStaffingRules[rule.location_id] ?? []
     const idx = store.findIndex(x => x.department_id === rule.department_id)
-    if (idx >= 0) store[idx] = { ...store[idx], ...rule }
-    else store.push({ id: `dsr-${Date.now()}`, ...rule })
+    if (idx >= 0) store[idx] = { ...store[idx], ...rule, id: store[idx].id }
+    else store.push({ ...rule, id: rule.id ?? `dsr-${Date.now()}` })
     demoStores.departmentStaffingRules[rule.location_id] = store
     return
   }

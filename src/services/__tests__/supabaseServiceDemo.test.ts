@@ -18,4 +18,16 @@ describe('department staffing rules (demo store)', () => {
     const rules = await getDepartmentStaffingRules('demo-location')
     expect(rules.find(r => r.department_id === 'dept-keuken')?.base_staff).toBe(2)
   })
+
+  it('behoudt gegenereerd id bij expliciete undefined in insert', async () => {
+    await upsertDepartmentStaffingRule({
+      id: undefined, location_id: 'demo-location', department_id: 'dept-nieuw',
+      department_name: 'Nieuw', base_staff: 1, busy_staff: 1,
+    })
+    const rules = await getDepartmentStaffingRules('demo-location')
+    const newRule = rules.find(r => r.department_id === 'dept-nieuw')
+    expect(newRule).toBeDefined()
+    expect(newRule?.id).toBeTruthy()
+    expect(typeof newRule?.id).toBe('string')
+  })
 })
