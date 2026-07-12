@@ -1,4 +1,5 @@
 import type { Company, DailyObservation, Department, DailyStaffingEvaluation, Location, LocationDepartment, LocationRole, Role, StaffingRule } from '../types/database'
+import type { DepartmentStaffingRule } from '../types/staffing'
 import { getWeekNumber, getSeason } from '../lib/utils'
 
 export const DEMO_COMPANY: Company = {
@@ -54,52 +55,52 @@ export const DEMO_STAFFING_RULES_2: StaffingRule[] = [
 ]
 
 export const DEMO_DEPARTMENTS: Department[] = [
-  { id: 'dept-keuken', company_id: 'demo-company', name: 'Keuken', created_at: '2025-01-01' },
-  { id: 'dept-zaal',   company_id: 'demo-company', name: 'Zaal',   created_at: '2025-01-01' },
-  { id: 'dept-kassa',  company_id: 'demo-company', name: 'Kassa',  created_at: '2025-01-01' },
-  { id: 'dept-bar',    company_id: 'demo-company', name: 'Bar',    created_at: '2025-01-01' },
+  { id: 'dept-bar-buiten', company_id: 'demo-company', name: 'Bar buiten', created_at: '2026-01-01' },
+  { id: 'dept-bar-binnen', company_id: 'demo-company', name: 'Bar binnen', created_at: '2026-01-01' },
+  { id: 'dept-keuken',     company_id: 'demo-company', name: 'Keuken',     created_at: '2026-01-01' },
 ]
 
 export const DEMO_ROLES: Role[] = [
-  { id: 'role-chef',            department_id: 'dept-keuken', name: 'Chef-kok',       created_at: '2025-01-01' },
-  { id: 'role-souschef',        department_id: 'dept-keuken', name: 'Sous-chef',       created_at: '2025-01-01' },
-  { id: 'role-kok',             department_id: 'dept-keuken', name: 'Kok',             created_at: '2025-01-01' },
-  { id: 'role-kelner',          department_id: 'dept-zaal',   name: 'Kelner',          created_at: '2025-01-01' },
-  { id: 'role-gastheer',        department_id: 'dept-zaal',   name: 'Gastheer/vrouw',  created_at: '2025-01-01' },
-  { id: 'role-kassamedewerker', department_id: 'dept-kassa',  name: 'Kassamedewerker', created_at: '2025-01-01' },
-  { id: 'role-barman',          department_id: 'dept-bar',    name: 'Barman',          created_at: '2025-01-01' },
-  { id: 'role-barhulp',         department_id: 'dept-bar',    name: 'Barhulp',         created_at: '2025-01-01' },
+  { id: 'role-buiten-bartender', department_id: 'dept-bar-buiten', name: 'Bartender',   created_at: '2026-01-01' },
+  { id: 'role-buiten-runner',    department_id: 'dept-bar-buiten', name: 'Runner',      created_at: '2026-01-01' },
+  { id: 'role-binnen-bartender', department_id: 'dept-bar-binnen', name: 'Bartender',   created_at: '2026-01-01' },
+  { id: 'role-kok',              department_id: 'dept-keuken',     name: 'Kok',         created_at: '2026-01-01' },
 ]
 
 export const DEMO_LOCATION_DEPARTMENTS: LocationDepartment[] = [
-  { id: 'ld-keuken', location_id: 'demo-location', department_id: 'dept-keuken', is_active: true  },
-  { id: 'ld-zaal',   location_id: 'demo-location', department_id: 'dept-zaal',   is_active: true  },
-  { id: 'ld-kassa',  location_id: 'demo-location', department_id: 'dept-kassa',  is_active: true  },
-  { id: 'ld-bar',    location_id: 'demo-location', department_id: 'dept-bar',    is_active: false },
+  { id: 'ld-buiten', location_id: 'demo-location', department_id: 'dept-bar-buiten', is_active: true },
+  { id: 'ld-binnen', location_id: 'demo-location', department_id: 'dept-bar-binnen', is_active: true },
+  { id: 'ld-keuken', location_id: 'demo-location', department_id: 'dept-keuken', is_active: true },
 ]
 
 export const DEMO_LOCATION_DEPARTMENTS_2: LocationDepartment[] = [
-  { id: 'ld2-keuken', location_id: 'demo-location-2', department_id: 'dept-keuken', is_active: true  },
-  { id: 'ld2-zaal',   location_id: 'demo-location-2', department_id: 'dept-zaal',   is_active: true  },
-  { id: 'ld2-kassa',  location_id: 'demo-location-2', department_id: 'dept-kassa',  is_active: false },
-  { id: 'ld2-bar',    location_id: 'demo-location-2', department_id: 'dept-bar',    is_active: true  },
+  { id: 'ld2-buiten', location_id: 'demo-location-2', department_id: 'dept-bar-buiten', is_active: true },
+  { id: 'ld2-binnen', location_id: 'demo-location-2', department_id: 'dept-bar-binnen', is_active: true },
+  { id: 'ld2-keuken', location_id: 'demo-location-2', department_id: 'dept-keuken',     is_active: false },
 ]
 
 export const DEMO_LOCATION_ROLES: LocationRole[] = [
-  { id: 'lr-chef',            location_id: 'demo-location', role_id: 'role-chef',            headcount: 1 },
-  { id: 'lr-souschef',        location_id: 'demo-location', role_id: 'role-souschef',        headcount: 2 },
-  { id: 'lr-kok',             location_id: 'demo-location', role_id: 'role-kok',             headcount: 4 },
-  { id: 'lr-kelner',          location_id: 'demo-location', role_id: 'role-kelner',          headcount: 6 },
-  { id: 'lr-gastheer',        location_id: 'demo-location', role_id: 'role-gastheer',        headcount: 2 },
-  { id: 'lr-kassamedewerker', location_id: 'demo-location', role_id: 'role-kassamedewerker', headcount: 3 },
+  { id: 'lr-buiten-bartender', location_id: 'demo-location', role_id: 'role-buiten-bartender', headcount: 2 },
+  { id: 'lr-buiten-runner',    location_id: 'demo-location', role_id: 'role-buiten-runner',    headcount: 1 },
+  { id: 'lr-binnen-bartender', location_id: 'demo-location', role_id: 'role-binnen-bartender', headcount: 2 },
+  { id: 'lr-kok',              location_id: 'demo-location', role_id: 'role-kok',              headcount: 1 },
 ]
 
 export const DEMO_LOCATION_ROLES_2: LocationRole[] = [
-  { id: 'lr2-chef',    location_id: 'demo-location-2', role_id: 'role-chef',    headcount: 1 },
-  { id: 'lr2-kok',     location_id: 'demo-location-2', role_id: 'role-kok',     headcount: 2 },
-  { id: 'lr2-kelner',  location_id: 'demo-location-2', role_id: 'role-kelner',  headcount: 3 },
-  { id: 'lr2-gastheer',location_id: 'demo-location-2', role_id: 'role-gastheer',headcount: 1 },
-  { id: 'lr2-barman',  location_id: 'demo-location-2', role_id: 'role-barman',  headcount: 2 },
+  { id: 'lr2-buiten-bartender', location_id: 'demo-location-2', role_id: 'role-buiten-bartender', headcount: 1 },
+  { id: 'lr2-binnen-bartender', location_id: 'demo-location-2', role_id: 'role-binnen-bartender', headcount: 1 },
+]
+
+// Bezettingsregels uit het Waterfront-gesprek: buiten 2 (3 bij groot feest/drukte), binnen 2, keuken 1
+export const DEMO_DEPARTMENT_STAFFING_RULES: DepartmentStaffingRule[] = [
+  { id: 'dsr-buiten', location_id: 'demo-location', department_id: 'dept-bar-buiten', department_name: 'Bar buiten', base_staff: 2, busy_staff: 3, event_guest_threshold: 50, event_staff: 3 },
+  { id: 'dsr-binnen', location_id: 'demo-location', department_id: 'dept-bar-binnen', department_name: 'Bar binnen', base_staff: 2, busy_staff: 2 },
+  { id: 'dsr-keuken', location_id: 'demo-location', department_id: 'dept-keuken',     department_name: 'Keuken',     base_staff: 1, busy_staff: 2 },
+]
+
+export const DEMO_DEPARTMENT_STAFFING_RULES_2: DepartmentStaffingRule[] = [
+  { id: 'dsr2-buiten', location_id: 'demo-location-2', department_id: 'dept-bar-buiten', department_name: 'Bar buiten', base_staff: 1, busy_staff: 2, event_guest_threshold: 50, event_staff: 2 },
+  { id: 'dsr2-binnen', location_id: 'demo-location-2', department_id: 'dept-bar-binnen', department_name: 'Bar binnen', base_staff: 1, busy_staff: 2 },
 ]
 
 export const DEMO_STAFFING_EVALUATIONS: DailyStaffingEvaluation[] = []
