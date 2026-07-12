@@ -1,7 +1,10 @@
 import { supabase, isDemo } from '../lib/supabase'
 import type { Company, DailyObservation, Department, DailyStaffingEvaluation, Location, LocationDepartment, LocationRole, Role, StaffingRule, UploadedFile } from '../types/database'
+import type { DepartmentStaffingRule } from '../types/staffing'
 import {
   DEMO_COMPANY,
+  DEMO_DEPARTMENT_STAFFING_RULES,
+  DEMO_DEPARTMENT_STAFFING_RULES_2,
   DEMO_DEPARTMENTS,
   DEMO_LOCATION_DEPARTMENTS,
   DEMO_LOCATION_DEPARTMENTS_2,
@@ -31,6 +34,10 @@ const demoStores = {
     'demo-location-2': DEMO_LOCATION_ROLES_2.map(r => ({ ...r })),
   } as Record<string, LocationRole[]>,
   staffingEvaluations: {} as Record<string, DailyStaffingEvaluation[]>,
+  departmentStaffingRules: {
+    'demo-location':   DEMO_DEPARTMENT_STAFFING_RULES.map(r => ({ ...r })),
+    'demo-location-2': DEMO_DEPARTMENT_STAFFING_RULES_2.map(r => ({ ...r })),
+  } as Record<string, DepartmentStaffingRule[]>,
 }
 
 export async function getCompanies(): Promise<Company[]> {
@@ -299,5 +306,36 @@ export async function saveDailyStaffingEvaluations(
   const { error } = await supabase
     .from('daily_staffing_evaluations')
     .upsert(evals, { onConflict: 'location_id,department_id,date' })
+  if (error) throw error
+}
+
+export async function getDepartmentStaffingRules(locationId: string): Promise<DepartmentStaffingRule[]> {
+  if (isDemo) return demoStores.departmentStaffingRules[locationId] ?? []
+  const { data, error } = await supabase
+    .from('department_staffing_rules')
+    .select('*, departments(name)')
+    .eq('location_id', locationId)
+  if (error) throw error
+  return (data as (DepartmentStaffingRule & { departments: { name: string } | null })[]).map(row => ({
+    ...row,
+    department_name: row.departments?.name ?? '',
+  }))
+}
+
+export async function upsertDepartmentStaffingRule(
+  rule: Omit<DepartmentStaffingRule, 'id'> & { id?: string }
+): Promise<void> {
+  if (isDemo) {
+    const store = demoStores.departmentStaffingRules[rule.location_id] ?? []
+    const idx = store.findIndex(x => x.department_id === rule.department_id)
+    if (idx >= 0) store[idx] = { ...store[idx], ...rule }
+    else store.push({ id: `dsr-${Date.now()}`, ...rule })
+    demoStores.departmentStaffingRules[rule.location_id] = store
+    return
+  }
+  const { department_name: _omit, ...dbRule } = rule // naam komt via join, niet uit tabel
+  const { error } = await supabase
+    .from('department_staffing_rules')
+    .upsert(dbRule, { onConflict: 'location_id,department_id' })
   if (error) throw error
 }
