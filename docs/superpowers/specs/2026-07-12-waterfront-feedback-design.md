@@ -66,7 +66,13 @@ Het dashboard wordt herbouwd rond de vier vragen van de uitbater:
 1. Bezettingsregels — boven een instelbare gastendrempel adviseert het systeem 3 i.p.v. 2 personen buiten.
 2. Forecast — een evenementdag krijgt extra verwachte bezoekers/omzet bovenop de baseline.
 
-Geen externe kalenderkoppeling in deze fase; de manager voert eigen boekingen in.
+**Automatische import uit de Waterfront-website (Google Calendar ICS).** Waterfront toont reserveringen op waterfront-genk.be/agenda via een Google Calendar-embed met twee publieke kalenders: "Waterfront Terras" en "Waterfront Strandje" (site draait op One.com Web Editor; eventaanvragen komen binnen via een contactformulier). Beide kalenders hebben een publiek bereikbare ICS-feed (`calendar.google.com/calendar/ical/<kalender-id>/public/basic.ics`) die gereserveerde slots teruggeeft als datum/tijd met `SUMMARY:Busy` — details blijven privé. Aanpak:
+- Per locatie configureerbare ICS-feed-URL's (generiek — elke klant met een publieke Google/Outlook-kalender kan aansluiten).
+- De FastAPI-backend haalt de feeds periodiek op (endpoint bv. `GET /events/{location_id}`, met caching) — browser-fetch kan niet wegens CORS.
+- Geïmporteerde "Busy"-slots verschijnen als evenement-concepten in de app, gekoppeld aan de juiste afdeling (Terras → Bar buiten); de manager vult per event het verwachte gastenaantal aan (dat zit niet in de feed en is nodig voor de bezettingsregel).
+- Krijgen we later echte kalendertoegang van de manager (gedeelde kalender of Google Calendar API), dan komen ook titel/omschrijving mee — de import-laag blijft dezelfde.
+
+Handmatige invoer blijft daarnaast altijd mogelijk.
 
 **Kassa-koppelvlak, twee stappen:**
 - *Nu:* CSV/Excel-import op uurniveau via de bestaande upload-wizard — tweede formaat naast dagtotalen: datum, uur, product(categorie), aantal, omzet.
@@ -99,7 +105,7 @@ Geen externe kalenderkoppeling in deze fase; de manager voert eigen boekingen in
 ## Buiten scope (bewust)
 
 - Integraties per kassamerk (het push-API-contract vervangt dit).
-- Externe evenementenkalenders (C-Mine, Bokrijk) — later te overwegen.
+- Regionale evenementenkalenders (C-Mine, Bokrijk) — later te overwegen. De eigen Waterfront-kalender (Google Calendar ICS) valt hier níét onder: die zit wél in scope (sectie 3).
 - Derving per product — één percentage per locatie volstaat nu.
 - WhatsApp-notificaties — mail eerst.
 
