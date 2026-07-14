@@ -1,5 +1,95 @@
 import { supabase, isDemo } from '../lib/supabase'
 import type { Company, DailyObservation, Department, DailyStaffingEvaluation, Location, LocationDepartment, LocationRole, Role, StaffingRule, UploadedFile } from '../types/database'
+
+// ─── Inventory types ──────────────────────────────────────────────────────────
+export interface InventoryItem {
+  id: string
+  company_id: string
+  location_id: string
+  name: string
+  category: string
+  unit: string
+  current_stock: number
+  min_stock: number
+  rpos_product_id?: string | null
+  updated_at: string
+}
+
+export interface SupplierConfig {
+  location_id: string
+  supplier_name: string
+  supplier_email: string
+}
+
+// ─── Inventory functions ──────────────────────────────────────────────────────
+export async function getInventoryItems(locationId: string): Promise<InventoryItem[]> {
+  if (isDemo) return []
+  const { data, error } = await supabase
+    .from('inventory_items')
+    .select('*')
+    .eq('location_id', locationId)
+    .order('category')
+    .order('name')
+  if (error) throw error
+  return data as InventoryItem[]
+}
+
+export async function upsertInventoryItem(
+  item: Omit<InventoryItem, 'updated_at'>
+): Promise<void> {
+  if (isDemo) return
+  const { error } = await supabase
+    .from('inventory_items')
+    .upsert(item, { onConflict: 'id' })
+  if (error) throw error
+}
+
+export async function deleteInventoryItem(id: string): Promise<void> {
+  if (isDemo) return
+  const { error } = await supabase.from('inventory_items').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function adjustStock(
+  itemId: string,
+  delta: number,
+  reason: 'manual' | 'delivery' | 'correction' = 'manual'
+): Promise<void> {
+  if (isDemo) return
+  const { data: item, error: fetchErr } = await supabase
+    .from('inventory_items')
+    .select('current_stock')
+    .eq('id', itemId)
+    .single()
+  if (fetchErr) throw fetchErr
+  const newStock = Math.max(0, (item.current_stock as number) + delta)
+  const { error: updateErr } = await supabase
+    .from('inventory_items')
+    .update({ current_stock: newStock })
+    .eq('id', itemId)
+  if (updateErr) throw updateErr
+  await supabase.from('inventory_transactions').insert({
+    item_id: itemId, quantity_delta: delta, reason,
+  })
+}
+
+export async function getSupplierConfig(locationId: string): Promise<SupplierConfig | null> {
+  if (isDemo) return null
+  const { data } = await supabase
+    .from('supplier_config')
+    .select('*')
+    .eq('location_id', locationId)
+    .single()
+  return data as SupplierConfig | null
+}
+
+export async function upsertSupplierConfig(cfg: SupplierConfig): Promise<void> {
+  if (isDemo) return
+  const { error } = await supabase
+    .from('supplier_config')
+    .upsert(cfg, { onConflict: 'location_id' })
+  if (error) throw error
+}
 import {
   DEMO_COMPANY,
   DEMO_DEPARTMENTS,
