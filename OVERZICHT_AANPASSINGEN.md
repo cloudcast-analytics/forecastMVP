@@ -9,6 +9,13 @@
 
 ## Changelog
 
+### 12-07-2026 — Vini G
+- **Personeelsengine per afdeling** — Bezetting per afdeling (basis / drukte / evenement-drempel) vervangt de platte bezoekersregels. Drukteniveau en bezetting komen uit dezelfde berekening.
+- **Dashboard herbouwd** — Gericht op de vier uitbatersvragen: verwachte omzet, wie waar inplannen (per afdeling, met delta), besparing t.o.v. vaste planning, volgend bestelmoment. Meta-informatie verwijderd.
+- **Realistische demodata** — Waterfront-profiel: seizoenszaak vanaf 1 april, €10,50–13,50 per bezoeker, bezetting 5–7, evenementen met gastenaantallen.
+- **Personeelsregels-pagina** — Per afdeling instelbaar + loonkosteninstellingen (uurloon, shifturen) voor de besparingsindicator.
+- **Vitest** — Testsuite toegevoegd voor engine, demodata-consistentie, settings en forecast.
+
 ### 08-07-2026 — Vini G
 - **Per-locatie data in demo-modus** — Elke locatie heeft nu zijn eigen personeelsregels, afdelingen en rollen. Wisselen van locatie geeft écht andere configuratie; mutaties worden per locatie bijgehouden in geheugen.
 - **XGBoost backend koppeling** — `forecastService.ts` is nu async en roept eerst het `POST /forecast/json` endpoint aan op de FastAPI backend. Valt automatisch terug op het statistisch model als de backend niet bereikbaar is. Stel `VITE_FORECAST_API_URL` in als omgevingsvariabele om de koppeling te activeren.
@@ -69,6 +76,24 @@
 - FastAPI backend (`cloudcastgit/`) bevat het XGBoost model en het endpoint
 - Nog te doen: backend deployen op Railway en `VITE_FORECAST_API_URL` instellen
 
+### 7. Waterfront Fase 1 — Dashboard + personeelslogica
+**Status:** [x] Afgerond (12-07-2026)
+
+### 8. Waterfront Fase 2 — Voorraad & brouwerij-bestelflow
+**Status:** [ ] Gepland — zie docs/superpowers/specs/2026-07-12-waterfront-feedback-design.md
+
+### 9. Waterfront Fase 3 — Evenementen (incl. Google Calendar ICS-import van waterfront-genk.be), uur-import, uur-trends
+**Status:** [ ] Gepland
+
+### 10. Cold-start blend (baseline + XGBoost) in FastAPI-backend
+**Status:** [ ] Gepland
+
+### 11. Klant-onboarding: uitnodiging + accounttab
+**Status:** [ ] Gepland — scope nog niet vastgelegd
+- Idee: admin (CloudCast) richt bedrijf/locatie(s)/personeelsregels in; de klant geeft zijn e-mailadres door en ontvangt een uitnodigingsmail (link om zelf in te loggen/wachtwoord in te stellen).
+- Nieuw "account"-tabje nodig in de sidebar, ter hoogte van het huidige e-mailadres boven de uitlogknop.
+- Nog te bepalen: welke informatie/acties in dat accounttabje komen, hoe de uitnodigingsmail precies werkt.
+
 ---
 
-*Laatst bijgewerkt: 11-07-2026*
+*Laatst bijgewerkt: 14-07-2026*
