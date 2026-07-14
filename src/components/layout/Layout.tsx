@@ -2,11 +2,7 @@ import React, { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
-  Building2,
   Building,
-  MapPin,
-  Upload,
-  Database,
   TrendingUp,
   BarChart2,
   Package,
@@ -25,22 +21,18 @@ interface LayoutProps {
 }
 
 const allNavItems = [
-  { to: '/dashboard',                label: 'Dashboard',   icon: LayoutDashboard, adminOnly: false },
-  { to: '/companies',                label: 'Bedrijven',   icon: Building2,       adminOnly: true  },
-  { to: '/locations',                label: 'Locaties',    icon: MapPin,          adminOnly: true  },
-  { to: '/data/upload',              label: 'Upload',      icon: Upload,          adminOnly: false },
-  { to: '/data',                     label: 'Data',        icon: Database,        adminOnly: false },
-  { to: '/forecast',                 label: 'Forecast',    icon: TrendingUp,      adminOnly: false },
-  { to: '/performance',              label: 'Performance', icon: BarChart2,       adminOnly: false },
-  { to: '/voorraad',                 label: 'Voorraad',    icon: Package,         adminOnly: false },
-  { to: '/staffing',                 label: 'Personeel',   icon: Users,           adminOnly: false },
-  { to: '/organization',             label: 'Organisatie', icon: Building,        adminOnly: false },
-  { to: '/settings/data-management', label: 'Beheer',      icon: Settings,        adminOnly: true  },
+  { to: '/dashboard',    label: 'Dashboard',       icon: LayoutDashboard, adminOnly: false },
+  { to: '/forecast',     label: 'Forecast',         icon: TrendingUp,      adminOnly: false },
+  { to: '/performance',  label: 'Performance',      icon: BarChart2,       adminOnly: false },
+  { to: '/voorraad',     label: 'Voorraad',         icon: Package,         adminOnly: false },
+  { to: '/staffing',     label: 'Personeelsregels', icon: Users,           adminOnly: false },
+  { to: '/organization', label: 'Organisatie',      icon: Building,        adminOnly: false },
+  { to: '/data',         label: 'Data beheer',      icon: Settings,        adminOnly: false },
 ]
 
 export default function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const { selectedCompany, selectedLocation, setSelectedLocation, locations, logout, currentUser, isDemo, role } = useApp()
+  const { selectedCompany, selectedLocation, setSelectedLocation, locations, logout, currentUser, isDemo, role, demoViewRole, setDemoViewRole } = useApp()
   const navigate = useNavigate()
   const navItems = allNavItems.filter(item => !item.adminOnly || role === 'admin')
 
@@ -111,13 +103,20 @@ export default function Layout({ children }: LayoutProps) {
           }}>
             {/* Bedrijfsblok */}
             {(selectedCompany || isDemo) && (
-              <div style={{
-                margin: '12px 12px 4px',
-                padding: '10px 12px',
-                borderRadius: '12px',
-                background: 'rgba(26,68,232,0.05)',
-                border: '1px solid rgba(26,68,232,0.1)',
-              }}>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => { navigate('/company'); setMobileOpen(false) }}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { navigate('/company'); setMobileOpen(false) } }}
+                style={{
+                  margin: '12px 12px 4px',
+                  padding: '10px 12px',
+                  borderRadius: '12px',
+                  background: 'rgba(26,68,232,0.05)',
+                  border: '1px solid rgba(26,68,232,0.1)',
+                  cursor: 'pointer',
+                }}
+              >
                 <p style={{ fontSize: '11px', color: '#6b7280', marginBottom: '2px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Bedrijf
                 </p>
@@ -125,19 +124,41 @@ export default function Layout({ children }: LayoutProps) {
                   {selectedCompany?.name ?? 'Waterfront Genk'}
                 </p>
                 {isDemo && (
-                  <span style={{
-                    display: 'inline-block',
-                    marginTop: '4px',
-                    fontSize: '10px',
-                    fontWeight: 600,
-                    background: '#1a44e8',
-                    color: 'white',
-                    padding: '1px 8px',
-                    borderRadius: '99px',
-                    letterSpacing: '0.03em',
-                  }}>
-                    Demo
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                    <span style={{
+                      fontSize: '10px',
+                      fontWeight: 600,
+                      background: '#1a44e8',
+                      color: 'white',
+                      padding: '1px 8px',
+                      borderRadius: '99px',
+                      letterSpacing: '0.03em',
+                    }}>
+                      Demo
+                    </span>
+                    <div
+                      onClick={e => e.stopPropagation()}
+                      style={{ display: 'flex', borderRadius: '99px', overflow: 'hidden', border: '1px solid rgba(26,68,232,0.2)' }}
+                    >
+                      {(['admin', 'customer'] as const).map(r => (
+                        <button
+                          key={r}
+                          onClick={() => setDemoViewRole(r)}
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 600,
+                            padding: '1px 8px',
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: demoViewRole === r ? '#1a44e8' : 'transparent',
+                            color: demoViewRole === r ? 'white' : '#6b7280',
+                          }}
+                        >
+                          {r === 'admin' ? 'Admin' : 'Klant'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
                 {locations.length === 1 && selectedLocation && (
                   <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
@@ -147,6 +168,7 @@ export default function Layout({ children }: LayoutProps) {
                 {locations.length > 1 && (
                   <select
                     value={selectedLocation?.id ?? ''}
+                    onClick={e => e.stopPropagation()}
                     onChange={e => {
                       const loc = locations.find(l => l.id === e.target.value) ?? null
                       setSelectedLocation(loc)
