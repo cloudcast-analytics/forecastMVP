@@ -4,7 +4,13 @@ import { isDemo, supabase } from '../lib/supabase'
 import { getCompanies, getLocations } from '../services/supabaseService'
 import { DEMO_COMPANY, DEMO_LOCATION, DEMO_LOCATION_2 } from '../data/demoSeed'
 
-type Role = 'admin' | 'customer' | null
+export type Role = 'admin' | 'customer' | null
+export type DemoViewRole = 'admin' | 'customer'
+
+// Eén bron voor "welke rol zie ik nu": in demo-modus overschrijft de demo-wisselknop de echte rol
+export function resolveRole(isDemoMode: boolean, demoViewRole: DemoViewRole, actualRole: Role): Role {
+  return isDemoMode ? demoViewRole : actualRole
+}
 
 interface AppContextValue {
   selectedCompany: Company | null
@@ -17,6 +23,8 @@ interface AppContextValue {
   isAuthenticated: boolean
   isDemo: boolean
   role: Role
+  demoViewRole: DemoViewRole
+  setDemoViewRole: (r: DemoViewRole) => void
   login: (email?: string) => void
   logout: () => void
 }
@@ -30,7 +38,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [selectedLocation, setSelectedLocationState] = useState<Location | null>(null)
   const [currentUser, setCurrentUser] = useState<{ email: string } | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(isDemo)
-  const [role, setRole] = useState<Role>(isDemo ? 'admin' : null)
+  const [actualRole, setActualRole] = useState<Role>(isDemo ? 'admin' : null)
+  const [demoViewRole, setDemoViewRole] = useState<DemoViewRole>('admin')
+  const role = resolveRole(isDemo, demoViewRole, actualRole)
 
   async function loadProfile(userId: string) {
     const { data } = await supabase
@@ -41,7 +51,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     if (!data) return
 
-    setRole(data.role as Role)
+    setActualRole(data.role as Role)
 
     if (data.role === 'customer' && data.company_id) {
       // Customer: laad alleen zijn eigen bedrijf
@@ -66,7 +76,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (isDemo) {
       setCurrentUser({ email: 'demo@cloudcast.be' })
       setIsAuthenticated(true)
-      setRole('admin')
+      setActualRole('admin')
       setCompanies([DEMO_COMPANY])
       setLocations([DEMO_LOCATION, DEMO_LOCATION_2])
       setSelectedCompanyState(DEMO_COMPANY)
@@ -90,7 +100,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       } else {
         setCurrentUser(null)
         setIsAuthenticated(false)
-        setRole(null)
+        setActualRole(null)
         setCompanies([])
         setSelectedCompanyState(null)
         setSelectedLocationState(null)
@@ -120,7 +130,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCurrentUser({ email: email ?? 'demo@cloudcast.be' })
     setIsAuthenticated(true)
     if (isDemo) {
-      setRole('admin')
+      setActualRole('admin')
       setCompanies([DEMO_COMPANY])
       setLocations([DEMO_LOCATION, DEMO_LOCATION_2])
       setSelectedCompanyState(DEMO_COMPANY)
@@ -132,7 +142,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!isDemo) await supabase.auth.signOut()
     setCurrentUser(null)
     setIsAuthenticated(false)
-    setRole(null)
+    setActualRole(null)
     setCompanies([])
     setSelectedCompanyState(null)
     setSelectedLocationState(null)
@@ -151,6 +161,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated,
         isDemo,
         role,
+        demoViewRole,
+        setDemoViewRole,
         login,
         logout,
       }}
