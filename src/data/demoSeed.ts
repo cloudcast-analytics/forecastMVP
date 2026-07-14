@@ -1,4 +1,4 @@
-import type { Company, DailyObservation, Department, DailyStaffingEvaluation, Location, LocationDepartment, LocationRole, Role, StaffingRule } from '../types/database'
+﻿import type { Company, DailyObservation, Department, DailyStaffingEvaluation, Location, LocationDepartment, LocationRole, Role } from '../types/database'
 import type { DepartmentStaffingRule } from '../types/staffing'
 import { getWeekNumber, getSeason } from '../lib/utils'
 import { isPublicHoliday, isSchoolHoliday } from '../lib/calendar'
@@ -42,31 +42,17 @@ export const DEMO_LOCATION_2: Location = {
   created_at: '2025-01-01',
 }
 
-export const DEMO_STAFFING_RULES: StaffingRule[] = [
-  { id: 'rule-1', company_id: 'demo-company', location_id: 'demo-location', min_visitors: 0,   max_visitors: 100, recommended_staff: 6,  label: 'Rustig'    },
-  { id: 'rule-2', company_id: 'demo-company', location_id: 'demo-location', min_visitors: 100, max_visitors: 250, recommended_staff: 10, label: 'Normaal'   },
-  { id: 'rule-3', company_id: 'demo-company', location_id: 'demo-location', min_visitors: 250, max_visitors: 500, recommended_staff: 16, label: 'Druk'      },
-  { id: 'rule-4', company_id: 'demo-company', location_id: 'demo-location', min_visitors: 500,                    recommended_staff: 22, label: 'Zeer druk' },
-]
-
-export const DEMO_STAFFING_RULES_2: StaffingRule[] = [
-  { id: 'rule2-1', company_id: 'demo-company', location_id: 'demo-location-2', min_visitors: 0,   max_visitors: 75,  recommended_staff: 4,  label: 'Rustig'    },
-  { id: 'rule2-2', company_id: 'demo-company', location_id: 'demo-location-2', min_visitors: 75,  max_visitors: 200, recommended_staff: 7,  label: 'Normaal'   },
-  { id: 'rule2-3', company_id: 'demo-company', location_id: 'demo-location-2', min_visitors: 200, max_visitors: 400, recommended_staff: 12, label: 'Druk'      },
-  { id: 'rule2-4', company_id: 'demo-company', location_id: 'demo-location-2', min_visitors: 400,                    recommended_staff: 18, label: 'Zeer druk' },
-]
-
 export const DEMO_DEPARTMENTS: Department[] = [
   { id: 'dept-bar-buiten', company_id: 'demo-company', name: 'Bar buiten', created_at: '2026-01-01' },
   { id: 'dept-bar-binnen', company_id: 'demo-company', name: 'Bar binnen', created_at: '2026-01-01' },
-  { id: 'dept-keuken',     company_id: 'demo-company', name: 'Keuken',     created_at: '2026-01-01' },
+  { id: 'dept-keuken', company_id: 'demo-company', name: 'Keuken', created_at: '2026-01-01' },
 ]
 
 export const DEMO_ROLES: Role[] = [
-  { id: 'role-buiten-bartender', department_id: 'dept-bar-buiten', name: 'Bartender',   created_at: '2026-01-01' },
-  { id: 'role-buiten-runner',    department_id: 'dept-bar-buiten', name: 'Runner',      created_at: '2026-01-01' },
-  { id: 'role-binnen-bartender', department_id: 'dept-bar-binnen', name: 'Bartender',   created_at: '2026-01-01' },
-  { id: 'role-kok',              department_id: 'dept-keuken',     name: 'Kok',         created_at: '2026-01-01' },
+  { id: 'role-buiten-bartender', department_id: 'dept-bar-buiten', name: 'Bartender', created_at: '2026-01-01' },
+  { id: 'role-buiten-runner', department_id: 'dept-bar-buiten', name: 'Runner', created_at: '2026-01-01' },
+  { id: 'role-binnen-bartender', department_id: 'dept-bar-binnen', name: 'Bartender', created_at: '2026-01-01' },
+  { id: 'role-kok', department_id: 'dept-keuken', name: 'Kok', created_at: '2026-01-01' },
 ]
 
 export const DEMO_LOCATION_DEPARTMENTS: LocationDepartment[] = [
@@ -78,14 +64,14 @@ export const DEMO_LOCATION_DEPARTMENTS: LocationDepartment[] = [
 export const DEMO_LOCATION_DEPARTMENTS_2: LocationDepartment[] = [
   { id: 'ld2-buiten', location_id: 'demo-location-2', department_id: 'dept-bar-buiten', is_active: true },
   { id: 'ld2-binnen', location_id: 'demo-location-2', department_id: 'dept-bar-binnen', is_active: true },
-  { id: 'ld2-keuken', location_id: 'demo-location-2', department_id: 'dept-keuken',     is_active: false },
+  { id: 'ld2-keuken', location_id: 'demo-location-2', department_id: 'dept-keuken', is_active: false },
 ]
 
 export const DEMO_LOCATION_ROLES: LocationRole[] = [
   { id: 'lr-buiten-bartender', location_id: 'demo-location', role_id: 'role-buiten-bartender', headcount: 2 },
-  { id: 'lr-buiten-runner',    location_id: 'demo-location', role_id: 'role-buiten-runner',    headcount: 1 },
+  { id: 'lr-buiten-runner', location_id: 'demo-location', role_id: 'role-buiten-runner', headcount: 1 },
   { id: 'lr-binnen-bartender', location_id: 'demo-location', role_id: 'role-binnen-bartender', headcount: 2 },
-  { id: 'lr-kok',              location_id: 'demo-location', role_id: 'role-kok',              headcount: 1 },
+  { id: 'lr-kok', location_id: 'demo-location', role_id: 'role-kok', headcount: 1 },
 ]
 
 export const DEMO_LOCATION_ROLES_2: LocationRole[] = [
@@ -93,11 +79,10 @@ export const DEMO_LOCATION_ROLES_2: LocationRole[] = [
   { id: 'lr2-binnen-bartender', location_id: 'demo-location-2', role_id: 'role-binnen-bartender', headcount: 1 },
 ]
 
-// Bezettingsregels uit het Waterfront-gesprek: buiten 2 (3 bij groot feest/drukte), binnen 2, keuken 1
 export const DEMO_DEPARTMENT_STAFFING_RULES: DepartmentStaffingRule[] = [
   { id: 'dsr-buiten', location_id: 'demo-location', department_id: 'dept-bar-buiten', department_name: 'Bar buiten', base_staff: 2, busy_staff: 3, event_guest_threshold: 50, event_staff: 3 },
   { id: 'dsr-binnen', location_id: 'demo-location', department_id: 'dept-bar-binnen', department_name: 'Bar binnen', base_staff: 2, busy_staff: 2 },
-  { id: 'dsr-keuken', location_id: 'demo-location', department_id: 'dept-keuken',     department_name: 'Keuken',     base_staff: 1, busy_staff: 2 },
+  { id: 'dsr-keuken', location_id: 'demo-location', department_id: 'dept-keuken', department_name: 'Keuken', base_staff: 1, busy_staff: 2 },
 ]
 
 export const DEMO_DEPARTMENT_STAFFING_RULES_2: DepartmentStaffingRule[] = [
@@ -107,35 +92,29 @@ export const DEMO_DEPARTMENT_STAFFING_RULES_2: DepartmentStaffingRule[] = [
 
 export const DEMO_STAFFING_EVALUATIONS: DailyStaffingEvaluation[] = []
 
-// Simple seeded pseudo-random — deterministic so data is consistent
 function seededRand(seed: number): number {
   const x = Math.sin(seed + 1) * 10000
   return x - Math.floor(x)
 }
 
-// Format a Date at local midnight as YYYY-MM-DD without the UTC shift that
-// d.toISOString() introduces (this machine runs UTC+2, so toISOString()
-// would roll local midnight back to the previous day's date string).
 function toLocalDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-// Evenementen met verwacht aantal gasten (drempel voor 3e persoon buiten: 50)
 function demoEvents(year: number): Record<string, { name: string; guests: number }> {
   return {
-    [`${year}-04-26`]: { name: 'Lente-opening',  guests: 40 },
+    [`${year}-04-26`]: { name: 'Lente-opening', guests: 40 },
     [`${year}-05-14`]: { name: 'Hemelvaart BBQ', guests: 60 },
-    [`${year}-05-30`]: { name: 'Privéfeest',     guests: 80 },
-    [`${year}-06-20`]: { name: 'Zomerfestival',  guests: 120 },
-    [`${year}-06-27`]: { name: 'Privéfeest',     guests: 35 },
-    [`${year}-07-05`]: { name: 'Waterski Cup',   guests: 90 },
-    [`${year}-07-18`]: { name: 'Privéfeest',     guests: 55 },
-    [`${year}-08-08`]: { name: 'Zomerkermis',    guests: 100 },
-    [`${year}-08-22`]: { name: 'Cocktailavond',  guests: 45 },
+    [`${year}-05-30`]: { name: 'Privéfeest', guests: 80 },
+    [`${year}-06-20`]: { name: 'Zomerfestival', guests: 120 },
+    [`${year}-06-27`]: { name: 'Privéfeest', guests: 35 },
+    [`${year}-07-05`]: { name: 'Waterski Cup', guests: 90 },
+    [`${year}-07-18`]: { name: 'Privéfeest', guests: 55 },
+    [`${year}-08-08`]: { name: 'Zomerkermis', guests: 100 },
+    [`${year}-08-22`]: { name: 'Cocktailavond', guests: 45 },
   }
 }
 
-// Terraszaak-drukte per maand (april rustig opstarten, hoogzomer piek)
 const MONTH_FACTOR: Record<number, number> = { 4: 0.75, 5: 0.9, 6: 1.05, 7: 1.15, 8: 1.15, 9: 0.85 }
 
 export function getDemoObservations(locationId = 'demo-location'): DailyObservation[] {
@@ -143,14 +122,12 @@ export function getDemoObservations(locationId = 'demo-location'): DailyObservat
   const rules = locationId === 'demo-location-2' ? DEMO_DEPARTMENT_STAFFING_RULES_2 : DEMO_DEPARTMENT_STAFFING_RULES
   const maxCapacity = locationId === 'demo-location-2' ? 800 : 1200
 
-  // Seizoenszaak: open sinds 1 april dit jaar, data t/m gisteren
   const yesterday = new Date()
   yesterday.setDate(yesterday.getDate() - 1)
   const year = yesterday.getFullYear()
-  const start = new Date(year, 3, 1) // 1 april
+  const start = new Date(year, 3, 1)
   const events = demoEvents(year)
 
-  // Pass 1: bezoekers en omzet per dag
   type DayDraft = { dateStr: string; d: Date; visitors: number; revenue: number; event?: { name: string; guests: number } }
   const drafts: DayDraft[] = []
   for (let d = new Date(start); d <= yesterday; d.setDate(d.getDate() + 1)) {
@@ -165,24 +142,22 @@ export function getDemoObservations(locationId = 'demo-location'): DailyObservat
     const rand2 = seededRand(seed + 1000)
     const rand3 = seededRand(seed + 2000)
 
-    // Bezoekers: terraszaak-profiel
     let visitors = isWeekend ? 220 + rand1 * 160 : 90 + rand1 * 70
     visitors *= MONTH_FACTOR[month] ?? 1.0
 
     const isRainy = rand3 < 0.3
-    if (isRainy) visitors *= 0.45 // regen halveert een terraszaak
+    if (isRainy) visitors *= 0.45
 
     if (event) visitors *= 1.2
     if (isPublicHoliday(dateStr)) visitors *= 1.2
     if (isSchoolHoliday(dateStr) && !isWeekend) visitors *= 1.15
 
     const finalVisitors = Math.round(visitors * scale)
-    const revenuePerVisitor = 10.5 + rand2 * 3 // €10,50–13,50 (drankgericht terras)
+    const revenuePerVisitor = 10.5 + rand2 * 3
     drafts.push({ dateStr, d: new Date(d), visitors: finalVisitors, revenue: Math.round(finalVisitors * revenuePerVisitor), event })
   }
 
-  // Pass 2: drukteniveau + bezetting uit dezelfde engine als dashboard/forecast → per constructie consistent
-  const avgRevenue = drafts.reduce((s, x) => s + x.revenue, 0) / Math.max(drafts.length, 1)
+  const avgRevenue = drafts.reduce((sum, item) => sum + item.revenue, 0) / Math.max(drafts.length, 1)
 
   return drafts.map(({ dateStr, d, visitors, revenue, event }) => {
     const demand = getDemandLevel(revenue, avgRevenue)
@@ -213,3 +188,4 @@ export function getDemoObservations(locationId = 'demo-location'): DailyObservat
     }
   })
 }
+

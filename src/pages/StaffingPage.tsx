@@ -1,147 +1,163 @@
-import React, { useEffect, useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+﻿import { useEffect, useState, type ChangeEvent } from 'react'
+import { Save } from 'lucide-react'
 import Layout from '../components/layout/Layout'
 import Button from '../components/ui/Button'
-import ConfirmModal from '../components/ui/ConfirmModal'
 import { useApp } from '../context/AppContext'
-import { getStaffingRules, saveStaffingRule, deleteStaffingRule } from '../services/supabaseService'
-import type { StaffingRule } from '../types/database'
+import {
+  getDepartments,
+  getLocationDepartments,
+  getDepartmentStaffingRules,
+  upsertDepartmentStaffingRule,
+} from '../services/supabaseService'
+import { getLocationSettings, saveLocationSettings, type LocationSettings } from '../services/settingsService'
+import type { Department } from '../types/database'
+import type { DepartmentStaffingRule } from '../types/staffing'
+
+interface RuleForm {
+  base_staff: string
+  busy_staff: string
+  event_guest_threshold: string
+  event_staff: string
+}
+
+function toForm(rule?: DepartmentStaffingRule): RuleForm {
+  return {
+    base_staff: rule ? String(rule.base_staff) : '1',
+    busy_staff: rule ? String(rule.busy_staff) : '1',
+    event_guest_threshold: rule?.event_guest_threshold !== undefined ? String(rule.event_guest_threshold) : '',
+    event_staff: rule?.event_staff !== undefined ? String(rule.event_staff) : '',
+  }
+}
 
 export default function StaffingPage() {
-  const { selectedCompany, selectedLocation, isDemo } = useApp()
-  const [rules, setRules] = useState<StaffingRule[]>([])
-  const [showForm, setShowForm] = useState(false)
-  const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [form, setForm] = useState({ min_visitors: '', max_visitors: '', recommended_staff: '', label: '' })
-  const [saving, setSaving] = useState(false)
+  const { selectedLocation } = useApp()
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [forms, setForms] = useState<Record<string, RuleForm>>({})
+  const [rules, setRules] = useState<DepartmentStaffingRule[]>([])
+  const [settings, setSettings] = useState<LocationSettings>({ hourly_wage: 14, shift_hours: 8 })
+  const [savedDept, setSavedDept] = useState<string | null>(null)
 
   useEffect(() => {
     if (!selectedLocation) return
-    getStaffingRules(selectedLocation.id).then(setRules)
+    setSettings(getLocationSettings(selectedLocation.id))
+    Promise.all([
+      getDepartments(selectedLocation.company_id),
+      getLocationDepartments(selectedLocation.id),
+      getDepartmentStaffingRules(selectedLocation.id),
+    ]).then(([depts, locDepts, r]) => {
+      const activeIds = new Set(locDepts.filter(ld => ld.is_active).map(ld => ld.department_id))
+      const active = depts.filter(d => activeIds.has(d.id))
+      setDepartments(active)
+      setRules(r)
+      setForms(Object.fromEntries(active.map(d => [d.id, toForm(r.find(x => x.department_id === d.id))])))
+    })
   }, [selectedLocation])
 
-  async function handleAdd(e: React.FormEvent) {
-    e.preventDefault()
-    if (!selectedCompany || !selectedLocation) return
-    setSaving(true)
-    const rule = {
-      company_id: selectedCompany.id,
+  async function handleSave(dept: Department) {
+    if (!selectedLocation) return
+    const f = forms[dept.id]
+    const existing = rules.find(r => r.department_id === dept.id)
+    await upsertDepartmentStaffingRule({
+      id: existing?.id,
       location_id: selectedLocation.id,
-      min_visitors: Number(form.min_visitors),
-      max_visitors: form.max_visitors ? Number(form.max_visitors) : undefined,
-      recommended_staff: Number(form.recommended_staff),
-      label: form.label,
-    }
-    await saveStaffingRule(rule)
-    if (isDemo) {
-      // In demo mode, simulate adding locally with a fake id
-      setRules(prev => [...prev, { id: `local-${Date.now()}`, ...rule }])
-    } else {
-      const updated = await getStaffingRules(selectedLocation.id)
-      setRules(updated)
-    }
-    setSaving(false)
-    setShowForm(false)
-    setForm({ min_visitors: '', max_visitors: '', recommended_staff: '', label: '' })
+      department_id: dept.id,
+      department_name: dept.name,
+      base_staff: Number(f.base_staff) || 1,
+      busy_staff: Number(f.busy_staff) || 1,
+      event_guest_threshold: f.event_guest_threshold ? Number(f.event_guest_threshold) : undefined,
+      event_staff: f.event_staff ? Number(f.event_staff) : undefined,
+    })
+    setRules(await getDepartmentStaffingRules(selectedLocation.id))
+    setSavedDept(dept.id)
+    setTimeout(() => setSavedDept(null), 2000)
   }
 
-  async function handleDelete(id: string) {
-    await deleteStaffingRule(id)
-    setRules(prev => prev.filter(r => r.id !== id))
-    setDeleteId(null)
+  function handleSettingsChange(next: LocationSettings) {
+    setSettings(next)
+    if (selectedLocation) saveLocationSettings(selectedLocation.id, next)
   }
+
+  const inputCls = 'w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
 
   return (
     <Layout>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Personeelsregels</h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Op basis van verwacht bezoekersaantal
-          </p>
-        </div>
-        <Button onClick={() => setShowForm(v => !v)}>
-          <Plus size={16} />
-          Regel toevoegen
-        </Button>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900">Personeelsregels</h1>
+        <p className="text-slate-500 text-sm mt-1">Bezetting per afdeling — basis, bij drukte en bij evenementen</p>
       </div>
 
-      {showForm && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-6">
-          <h3 className="text-sm font-semibold text-slate-700 mb-4">Nieuwe regel</h3>
-          <form onSubmit={handleAdd} className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Min bezoekers</label>
-              <input type="number" required value={form.min_visitors} onChange={e => setForm(f => ({ ...f, min_visitors: e.target.value }))}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Max bezoekers (leeg = onbeperkt)</label>
-              <input type="number" value={form.max_visitors} onChange={e => setForm(f => ({ ...f, max_visitors: e.target.value }))}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Aanbevolen personeel</label>
-              <input type="number" required value={form.recommended_staff} onChange={e => setForm(f => ({ ...f, recommended_staff: e.target.value }))}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Label</label>
-              <input type="text" required value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
-                placeholder="bv. Druk"
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-            <div className="col-span-2 flex justify-end gap-3">
-              <Button variant="secondary" type="button" onClick={() => setShowForm(false)}>Annuleren</Button>
-              <Button type="submit" disabled={saving}>{saving ? 'Opslaan...' : 'Opslaan'}</Button>
-            </div>
-          </form>
-        </div>
-      )}
+      <div className="flex flex-col gap-4 mb-8">
+        {departments.map(dept => {
+          const f = forms[dept.id]
+          if (!f) return null
+          const set = (key: keyof RuleForm) => (e: ChangeEvent<HTMLInputElement>) =>
+            setForms(prev => ({ ...prev, [dept.id]: { ...prev[dept.id], [key]: e.target.value } }))
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr className="border-b border-slate-200 bg-slate-50 text-left">
-              <th className="px-4 py-3 font-medium text-slate-600">Label</th>
-              <th className="px-4 py-3 font-medium text-slate-600">Min bezoekers</th>
-              <th className="px-4 py-3 font-medium text-slate-600">Max bezoekers</th>
-              <th className="px-4 py-3 font-medium text-slate-600">Aanbevolen personeel</th>
-              <th className="px-4 py-3 font-medium text-slate-600"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {rules.map(r => (
-              <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-900">{r.label}</td>
-                <td className="px-4 py-3 text-slate-700">{r.min_visitors.toLocaleString('nl-BE')}</td>
-                <td className="px-4 py-3 text-slate-700">{r.max_visitors !== undefined ? r.max_visitors.toLocaleString('nl-BE') : '∞'}</td>
-                <td className="px-4 py-3 font-semibold text-slate-900">{r.recommended_staff}</td>
-                <td className="px-4 py-3">
-                  <button
-                    onClick={() => setDeleteId(r.id)}
-                    className="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {rules.length === 0 && (
-          <div className="text-center py-12 text-slate-400 text-sm">Nog geen personeelsregels.</div>
+          return (
+            <div key={dept.id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-slate-800">{dept.name}</h3>
+                <Button onClick={() => handleSave(dept)}>
+                  <Save size={14} />
+                  {savedDept === dept.id ? 'Opgeslagen ?' : 'Opslaan'}
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Basisbezetting</label>
+                  <input type="number" min="0" value={f.base_staff} onChange={set('base_staff')} className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Bij drukte</label>
+                  <input type="number" min="0" value={f.busy_staff} onChange={set('busy_staff')} className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Evenement vanaf … gasten (leeg = n.v.t.)</label>
+                  <input type="number" min="0" value={f.event_guest_threshold} onChange={set('event_guest_threshold')} className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Bezetting bij evenement</label>
+                  <input type="number" min="0" value={f.event_staff} onChange={set('event_staff')} className={inputCls} />
+                </div>
+              </div>
+            </div>
+          )
+        })}
+        {departments.length === 0 && (
+          <div className="text-center py-12 text-slate-400 text-sm bg-white rounded-xl border border-slate-200">
+            Geen actieve afdelingen voor deze locatie. Activeer afdelingen op de Organisatie-pagina.
+          </div>
         )}
       </div>
 
-      {deleteId && (
-        <ConfirmModal
-          title="Regel verwijderen"
-          message="Weet je zeker dat je deze personeelsregel wil verwijderen?"
-          onConfirm={() => handleDelete(deleteId)}
-          onCancel={() => setDeleteId(null)}
-        />
-      )}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 max-w-xl">
+        <h3 className="text-sm font-semibold text-slate-800 mb-1">Loonkosten</h3>
+        <p className="text-xs text-slate-500 mb-4">Gebruikt voor de besparingsindicator op het dashboard.</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Gemiddeld uurloon (€)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={settings.hourly_wage}
+              className={inputCls}
+              onChange={e => handleSettingsChange({ ...settings, hourly_wage: Number(e.target.value) || 0 })}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-600 mb-1">Shifturen per dag</label>
+            <input
+              type="number"
+              min="0"
+              value={settings.shift_hours}
+              className={inputCls}
+              onChange={e => handleSettingsChange({ ...settings, shift_hours: Number(e.target.value) || 0 })}
+            />
+          </div>
+        </div>
+      </div>
     </Layout>
   )
 }
+

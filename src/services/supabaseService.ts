@@ -1,5 +1,5 @@
-import { supabase, isDemo } from '../lib/supabase'
-import type { Company, DailyObservation, Department, DailyStaffingEvaluation, Location, LocationDepartment, LocationRole, Role, StaffingRule, UploadedFile } from '../types/database'
+﻿import { supabase, isDemo } from '../lib/supabase'
+import type { Company, DailyObservation, Department, DailyStaffingEvaluation, Location, LocationDepartment, LocationRole, Role, UploadedFile } from '../types/database'
 import type { DepartmentStaffingRule } from '../types/staffing'
 import {
   DEMO_COMPANY,
@@ -13,29 +13,22 @@ import {
   DEMO_LOCATION,
   DEMO_LOCATION_2,
   DEMO_ROLES,
-  DEMO_STAFFING_RULES,
-  DEMO_STAFFING_RULES_2,
   getDemoObservations,
 } from '../data/demoSeed'
 
-// Per-location in-memory stores for demo mode — mutations update these
 const demoStores = {
   observations: {} as Record<string, DailyObservation[]>,
-  staffingRules: {
-    'demo-location':   DEMO_STAFFING_RULES.map(r => ({ ...r })),
-    'demo-location-2': DEMO_STAFFING_RULES_2.map(r => ({ ...r })),
-  } as Record<string, StaffingRule[]>,
   locationDepartments: {
-    'demo-location':   DEMO_LOCATION_DEPARTMENTS.map(d => ({ ...d })),
+    'demo-location': DEMO_LOCATION_DEPARTMENTS.map(d => ({ ...d })),
     'demo-location-2': DEMO_LOCATION_DEPARTMENTS_2.map(d => ({ ...d })),
   } as Record<string, LocationDepartment[]>,
   locationRoles: {
-    'demo-location':   DEMO_LOCATION_ROLES.map(r => ({ ...r })),
+    'demo-location': DEMO_LOCATION_ROLES.map(r => ({ ...r })),
     'demo-location-2': DEMO_LOCATION_ROLES_2.map(r => ({ ...r })),
   } as Record<string, LocationRole[]>,
   staffingEvaluations: {} as Record<string, DailyStaffingEvaluation[]>,
   departmentStaffingRules: {
-    'demo-location':   DEMO_DEPARTMENT_STAFFING_RULES.map(r => ({ ...r })),
+    'demo-location': DEMO_DEPARTMENT_STAFFING_RULES.map(r => ({ ...r })),
     'demo-location-2': DEMO_DEPARTMENT_STAFFING_RULES_2.map(r => ({ ...r })),
   } as Record<string, DepartmentStaffingRule[]>,
 }
@@ -81,7 +74,6 @@ export async function saveObservations(observations: DailyObservation[]): Promis
     if (locationId) demoStores.observations[locationId] = observations
     return
   }
-  // Dedupliceer op date — houd de laatste rij per datum
   const deduped = Object.values(
     observations.reduce((acc, o) => ({ ...acc, [o.date]: o }), {} as Record<string, typeof observations[0]>)
   )
@@ -102,39 +94,6 @@ export async function deleteObservation(id: string): Promise<void> {
     .from('daily_observations')
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', id)
-  if (error) throw error
-}
-
-export async function getStaffingRules(locationId: string): Promise<StaffingRule[]> {
-  if (isDemo) return demoStores.staffingRules[locationId] ?? []
-  const { data, error } = await supabase
-    .from('staffing_rules')
-    .select('*')
-    .eq('location_id', locationId)
-    .order('min_visitors')
-  if (error) throw error
-  return data as StaffingRule[]
-}
-
-export async function saveStaffingRule(rule: Omit<StaffingRule, 'id'>): Promise<void> {
-  if (isDemo) {
-    const store = demoStores.staffingRules[rule.location_id] ?? []
-    store.push({ id: `rule-${Date.now()}`, ...rule })
-    demoStores.staffingRules[rule.location_id] = store
-    return
-  }
-  const { error } = await supabase.from('staffing_rules').insert(rule)
-  if (error) throw error
-}
-
-export async function deleteStaffingRule(id: string): Promise<void> {
-  if (isDemo) {
-    for (const locationId of Object.keys(demoStores.staffingRules)) {
-      demoStores.staffingRules[locationId] = demoStores.staffingRules[locationId].filter(r => r.id !== id)
-    }
-    return
-  }
-  const { error } = await supabase.from('staffing_rules').delete().eq('id', id)
   if (error) throw error
 }
 
@@ -186,9 +145,7 @@ export async function deleteDepartment(id: string): Promise<void> {
 }
 
 export async function getRoles(companyId: string): Promise<Role[]> {
-  if (isDemo) return DEMO_ROLES.filter(r =>
-    DEMO_DEPARTMENTS.some(d => d.id === r.department_id && d.company_id === companyId)
-  )
+  if (isDemo) return DEMO_ROLES.filter(r => DEMO_DEPARTMENTS.some(d => d.id === r.department_id && d.company_id === companyId))
   const { data: depts, error: deptsError } = await supabase
     .from('departments')
     .select('id')
@@ -267,10 +224,7 @@ export async function upsertLocationRole(lr: Omit<LocationRole, 'id'>): Promise<
   if (error) throw error
 }
 
-export async function getDailyStaffingEvaluations(
-  locationId: string,
-  date: string
-): Promise<DailyStaffingEvaluation[]> {
+export async function getDailyStaffingEvaluations(locationId: string, date: string): Promise<DailyStaffingEvaluation[]> {
   if (isDemo) {
     return (demoStores.staffingEvaluations[locationId] ?? []).filter(e => e.date === date)
   }
@@ -283,15 +237,11 @@ export async function getDailyStaffingEvaluations(
   return data as DailyStaffingEvaluation[]
 }
 
-export async function saveDailyStaffingEvaluations(
-  evals: Omit<DailyStaffingEvaluation, 'id' | 'created_at'>[]
-): Promise<void> {
+export async function saveDailyStaffingEvaluations(evals: Omit<DailyStaffingEvaluation, 'id' | 'created_at'>[]): Promise<void> {
   if (isDemo) {
     for (const e of evals) {
       const store = demoStores.staffingEvaluations[e.location_id] ?? []
-      const idx = store.findIndex(x =>
-        x.location_id === e.location_id && x.department_id === e.department_id && x.date === e.date
-      )
+      const idx = store.findIndex(x => x.location_id === e.location_id && x.department_id === e.department_id && x.date === e.date)
       const record: DailyStaffingEvaluation = {
         id: `eval-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         created_at: new Date().toISOString(),
@@ -322,9 +272,7 @@ export async function getDepartmentStaffingRules(locationId: string): Promise<De
   }))
 }
 
-export async function upsertDepartmentStaffingRule(
-  rule: Omit<DepartmentStaffingRule, 'id'> & { id?: string }
-): Promise<void> {
+export async function upsertDepartmentStaffingRule(rule: Omit<DepartmentStaffingRule, 'id'> & { id?: string }): Promise<void> {
   if (isDemo) {
     const store = demoStores.departmentStaffingRules[rule.location_id] ?? []
     const idx = store.findIndex(x => x.department_id === rule.department_id)
@@ -333,9 +281,10 @@ export async function upsertDepartmentStaffingRule(
     demoStores.departmentStaffingRules[rule.location_id] = store
     return
   }
-  const { department_name: _omit, ...dbRule } = rule // naam komt via join, niet uit tabel
+  const { department_name: _omit, ...dbRule } = rule
   const { error } = await supabase
     .from('department_staffing_rules')
     .upsert(dbRule, { onConflict: 'location_id,department_id' })
   if (error) throw error
 }
+

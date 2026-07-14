@@ -1,4 +1,4 @@
-export interface Company {
+﻿export interface Company {
   id: string
   name: string
   sector: string
@@ -63,16 +63,6 @@ export interface UploadedFile {
   deleted_at?: string
 }
 
-export interface StaffingRule {
-  id: string
-  company_id: string
-  location_id: string
-  min_visitors: number
-  max_visitors?: number
-  recommended_staff: number
-  label: string
-}
-
 export interface WeatherData {
   id: string
   location_id: string
@@ -121,3 +111,4 @@ export interface DailyStaffingEvaluation {
   rating: 'understaffed' | 'adequate' | 'overstaffed'
   created_at: string
 }
+
