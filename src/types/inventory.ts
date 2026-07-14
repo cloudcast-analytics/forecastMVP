@@ -34,6 +34,8 @@ export interface OrderLine {
   suggested_qty: number   // systeem-suggestie in besteleenheden
   quantity: number        // manager-aangepast, in besteleenheden
   reason: 'par_level' | 'forecast'
+  par_says?: number       // par-level voorstel in besteleenheden
+  forecast_says?: number  // forecast voorstel in besteleenheden
 }
 
 export interface Order {

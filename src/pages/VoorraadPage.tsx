@@ -1,16 +1,22 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   AlertTriangle, Check, ChevronDown, ChevronUp, Mail, Package,
-  Plus, Settings, ShoppingCart, Trash2, X,
+  Plus, Settings, ShoppingCart, Trash2, TrendingDown, X,
 } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
 import Button from '../components/ui/Button'
 import { useApp } from '../context/AppContext'
 import {
-  deleteProduct, getInventorySupplierConfig, getOrders, getProducts,
+  deleteProduct, getDepartmentStaffingRules, getInventorySupplierConfig,
+  getObservations, getOrders, getProducts,
   updateProductStock, upsertInventorySupplierConfig, upsertOrder, upsertProduct,
 } from '../services/supabaseService'
+import { generateForecast } from '../services/forecastService'
+import { getLocationSettings, saveLocationSettings } from '../services/settingsService'
+import type { LocationSettings } from '../services/settingsService'
+import type { DailyObservation } from '../types/database'
+import type { ForecastDay } from '../types/forecast'
 import type { Order, OrderLine, Product, ProductCategory, SupplierConfig } from '../types/inventory'
 
 type Tab = 'producten' | 'bestellen'
@@ -143,13 +149,16 @@ interface ProductenTabProps {
   onProductsChange: (products: Product[]) => void
   locationId: string
   companyId: string
+  settings: LocationSettings
+  onSettingsChange: (s: LocationSettings) => void
 }
 
-function ProductenTab({ products, onProductsChange, locationId, companyId }: ProductenTabProps) {
+function ProductenTab({ products, onProductsChange, locationId, companyId, settings, onSettingsChange }: ProductenTabProps) {
   const [filter, setFilter] = useState<ProductCategory | 'Alle'>('Alle')
   const [showForm, setShowForm] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [supplier, setSupplier] = useState<SupplierConfig>({ location_id: locationId, supplier_name: '', supplier_email: '' })
+  const [localWaste, setLocalWaste] = useState(settings.waste_percentage)
 
   useEffect(() => {
     getInventorySupplierConfig(locationId).then(cfg => {
@@ -180,6 +189,9 @@ function ProductenTab({ products, onProductsChange, locationId, companyId }: Pro
 
   async function handleSupplierSave() {
     await upsertInventorySupplierConfig(supplier)
+    const newSettings = { ...settings, waste_percentage: localWaste }
+    saveLocationSettings(locationId, newSettings)
+    onSettingsChange(newSettings)
     setShowSettings(false)
   }
 
@@ -215,8 +227,8 @@ function ProductenTab({ products, onProductsChange, locationId, companyId }: Pro
 
       {showSettings && (
         <div style={{ ...CARD, padding: '20px', marginBottom: '20px' }}>
-          <p style={{ fontSize: '13px', fontWeight: 600, color: '#1a1f36', marginBottom: '14px' }}>Leverancier</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+          <p style={{ fontSize: '13px', fontWeight: 600, color: '#1a1f36', marginBottom: '14px' }}>Leverancier & voorraadinstelling</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 140px', gap: '12px', marginBottom: '14px' }}>
             <div>
               <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: '4px' }}>Naam leverancier</label>
               <input value={supplier.supplier_name} onChange={e => setSupplier(s => ({ ...s, supplier_name: e.target.value }))} placeholder="bv. Alken-Maes" style={INPUT} />
@@ -224,6 +236,19 @@ function ProductenTab({ products, onProductsChange, locationId, companyId }: Pro
             <div>
               <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: '4px' }}>E-mailadres</label>
               <input type="email" value={supplier.supplier_email} onChange={e => setSupplier(s => ({ ...s, supplier_email: e.target.value }))} placeholder="bestellingen@leverancier.be" style={INPUT} />
+            </div>
+            <div>
+              <label style={{ fontSize: '11px', fontWeight: 600, color: '#6b7280', display: 'block', marginBottom: '4px' }}>Derving %</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="number" min="0" max="30" step="0.5"
+                  value={localWaste}
+                  onChange={e => setLocalWaste(Number(e.target.value))}
+                  style={{ ...INPUT, paddingRight: '28px' }}
+                />
+                <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '12px', color: '#9ca3af', pointerEvents: 'none' }}>%</span>
+              </div>
+              <p style={{ fontSize: '10px', color: '#9ca3af', marginTop: '4px' }}>rondje v/d zaak, breuk, eigen verbruik</p>
             </div>
           </div>
           <Button onClick={handleSupplierSave}>Opslaan</Button>
@@ -314,9 +339,12 @@ interface BestellenTabProps {
   products: Product[]
   onProductsChange: (products: Product[]) => void
   locationId: string
+  forecast: ForecastDay[]
+  hasEnoughData: boolean
+  wastePct: number
 }
 
-function BestellenTab({ products, onProductsChange, locationId }: BestellenTabProps) {
+function BestellenTab({ products, onProductsChange, locationId, forecast, hasEnoughData, wastePct }: BestellenTabProps) {
   const [orders, setOrders] = useState<Order[]>([])
   const [supplier, setSupplier] = useState<SupplierConfig | null>(null)
   const [loading, setLoading] = useState(true)
@@ -333,12 +361,36 @@ function BestellenTab({ products, onProductsChange, locationId }: BestellenTabPr
 
   const pendingOrder = useMemo(() => orders.find(o => o.status === 'voorstel' || o.status === 'goedgekeurd'), [orders])
 
+  function daysUntilNextOrderMoment(): number {
+    const today = new Date()
+    for (let i = 1; i <= 7; i++) {
+      const d = new Date(today)
+      d.setDate(d.getDate() + i)
+      if (d.getDay() === 0 || d.getDay() === 3) return i
+    }
+    return 4
+  }
+
   function generateProposal() {
     const lowProducts = products.filter(isLow)
     if (lowProducts.length === 0) return
 
+    const coverageDays = daysUntilNextOrderMoment()
+    const relevantDays = forecast.slice(0, coverageDays)
+    const totalVisitors = relevantDays.reduce((sum, d) => sum + d.predicted_visitors, 0)
+    const forecastUsable = hasEnoughData && totalVisitors > 0
+
     const lines: OrderLine[] = lowProducts.map(p => {
-      const qty = suggestedQty(p)
+      const parSays = suggestedQty(p)
+
+      let forecastSays: number | undefined
+      if (forecastUsable && p.consume_per_visitor > 0) {
+        const consumption = totalVisitors * p.consume_per_visitor * (1 + wastePct / 100)
+        forecastSays = Math.max(0, Math.ceil((consumption - p.current_stock) / p.order_unit_size))
+      }
+
+      const qty = forecastSays !== undefined ? forecastSays : parSays
+
       return {
         product_id: p.id,
         product_name: p.name,
@@ -349,7 +401,9 @@ function BestellenTab({ products, onProductsChange, locationId }: BestellenTabPr
         par_level: p.par_level,
         suggested_qty: qty,
         quantity: qty,
-        reason: 'par_level' as const,
+        reason: forecastSays !== undefined ? 'forecast' as const : 'par_level' as const,
+        par_says: parSays,
+        forecast_says: forecastSays,
       }
     })
 
@@ -501,7 +555,7 @@ function BestellenTab({ products, onProductsChange, locationId }: BestellenTabPr
           <div>
             <p style={{ fontSize: '14px', fontWeight: 600, color: '#1a1f36' }}>Bestelvoorstel</p>
             <p style={{ fontSize: '12px', color: '#9ca3af' }}>
-              Gebaseerd op par-level · {new Date(pendingOrder.created_at).toLocaleDateString('nl-BE')}
+              {pendingOrder.lines.some(l => l.reason === 'forecast') ? 'Gebaseerd op forecast' : 'Gebaseerd op par-level'} · {new Date(pendingOrder.created_at).toLocaleDateString('nl-BE')}
             </p>
           </div>
           <button
@@ -519,25 +573,51 @@ function BestellenTab({ products, onProductsChange, locationId }: BestellenTabPr
             padding: '8px 12px', borderRadius: '8px', background: '#f8fafc',
             fontSize: '11px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px',
           }}>
-            <span>Product</span><span>Huidige stock</span><span>Par-level</span><span>Bestellen</span>
+            <span>Product</span><span>Huidige stock</span><span>Advies</span><span>Bestellen</span>
           </div>
-          {pendingOrder.lines.map(line => (
-            <div key={line.product_id} style={{
-              display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr',
-              alignItems: 'center', padding: '10px 12px',
-              borderBottom: '1px solid #f1f5f9', fontSize: '13px',
-            }}>
-              <span style={{ fontWeight: 500, color: '#1a1f36' }}>{line.product_name}</span>
-              <span style={{ color: '#6b7280' }}>{(line.current_stock / line.order_unit_size).toFixed(1)} eenheden</span>
-              <span style={{ color: '#6b7280' }}>{line.par_level} {line.order_unit.split(' ')[0]}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <button onClick={() => updateLineQty(pendingOrder.id, line.product_id, line.quantity - 1)} style={counterBtnStyle}>−</button>
-                <span style={{ fontSize: '14px', fontWeight: 700, color: '#1a1f36', minWidth: '28px', textAlign: 'center' }}>{line.quantity}</span>
-                <button onClick={() => updateLineQty(pendingOrder.id, line.product_id, line.quantity + 1)} style={counterBtnStyle}>+</button>
-                <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '2px' }}>{line.order_unit}</span>
+          {pendingOrder.lines.map(line => {
+            const hasDual = line.forecast_says !== undefined && line.par_says !== undefined && line.forecast_says !== line.par_says
+            const saving = hasDual ? (line.par_says! - line.forecast_says!) : 0
+            return (
+              <div key={line.product_id} style={{
+                display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr',
+                alignItems: 'center', padding: '10px 12px',
+                borderBottom: '1px solid #f1f5f9', fontSize: '13px',
+              }}>
+                <div>
+                  <span style={{ fontWeight: 500, color: '#1a1f36' }}>{line.product_name}</span>
+                  {hasDual && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px' }}>
+                      <span style={{ fontSize: '10px', color: '#6b7280', background: '#f1f5f9', padding: '1px 6px', borderRadius: '4px' }}>
+                        par: {line.par_says}
+                      </span>
+                      <span style={{ fontSize: '10px', color: '#1d4ed8', background: 'rgba(29,78,216,0.06)', padding: '1px 6px', borderRadius: '4px' }}>
+                        forecast: {line.forecast_says}
+                      </span>
+                      {saving > 0 && (
+                        <span style={{ fontSize: '10px', color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '2px' }}>
+                          <TrendingDown size={10} /> besparing: {saving}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {!hasDual && line.reason === 'par_level' && (
+                    <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>par-level</div>
+                  )}
+                </div>
+                <span style={{ color: '#6b7280' }}>{(line.current_stock / line.order_unit_size).toFixed(1)} eenheden</span>
+                <span style={{ color: '#6b7280', fontSize: '12px' }}>
+                  {line.reason === 'forecast' ? `${line.forecast_says} (forecast)` : `${line.par_level} (par)`}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button onClick={() => updateLineQty(pendingOrder.id, line.product_id, line.quantity - 1)} style={counterBtnStyle}>−</button>
+                  <span style={{ fontSize: '14px', fontWeight: 700, color: '#1a1f36', minWidth: '28px', textAlign: 'center' }}>{line.quantity}</span>
+                  <button onClick={() => updateLineQty(pendingOrder.id, line.product_id, line.quantity + 1)} style={counterBtnStyle}>+</button>
+                  <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '2px' }}>{line.order_unit}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -564,18 +644,29 @@ export default function VoorraadPage() {
   const initialTab: Tab = (routeLocation.state as { tab?: Tab } | null)?.tab === 'bestellen' ? 'bestellen' : 'producten'
   const [activeTab, setActiveTab] = useState<Tab>(initialTab)
   const [products, setProducts] = useState<Product[]>([])
+  const [observations, setObservations] = useState<DailyObservation[]>([])
+  const [forecast, setForecast] = useState<ForecastDay[]>([])
+  const [settings, setSettings] = useState<LocationSettings>(() => getLocationSettings(locationId))
   const [loading, setLoading] = useState(true)
 
-  const loadProducts = useCallback(async () => {
+  const loadData = useCallback(async () => {
     if (!selectedLocation) return
     setLoading(true)
-    const data = await getProducts(selectedLocation.id)
-    setProducts(data)
+    const [prods, obs, rules] = await Promise.all([
+      getProducts(selectedLocation.id),
+      getObservations(selectedLocation.id),
+      getDepartmentStaffingRules(selectedLocation.id),
+    ])
+    setProducts(prods)
+    setObservations(obs)
+    setSettings(getLocationSettings(selectedLocation.id))
+    generateForecast(obs, 14, rules, selectedLocation.id).then(setForecast)
     setLoading(false)
   }, [selectedLocation])
 
-  useEffect(() => { loadProducts() }, [loadProducts])
+  useEffect(() => { loadData() }, [loadData])
 
+  const hasEnoughData = observations.length >= 14
   const lowCount = useMemo(() => products.filter(isLow).length, [products])
 
   return (
@@ -626,6 +717,8 @@ export default function VoorraadPage() {
               onProductsChange={setProducts}
               locationId={locationId}
               companyId={companyId}
+              settings={settings}
+              onSettingsChange={setSettings}
             />
           )}
           {activeTab === 'bestellen' && (
@@ -633,6 +726,9 @@ export default function VoorraadPage() {
               products={products}
               onProductsChange={setProducts}
               locationId={locationId}
+              forecast={forecast}
+              hasEnoughData={observations.length >= 14}
+              wastePct={settings.waste_percentage}
             />
           )}
         </>

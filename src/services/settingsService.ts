@@ -1,11 +1,13 @@
 ﻿export interface LocationSettings {
   hourly_wage: number
   shift_hours: number
+  waste_percentage: number
 }
 
 const DEFAULTS: LocationSettings = {
   hourly_wage: 14,
   shift_hours: 8,
+  waste_percentage: 3,
 }
 
 export function getLocationSettings(locationId: string): LocationSettings {
