@@ -338,13 +338,13 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {[
               { icon: TrendingUp, label: 'Forecast bekijken', sub: '14-daagse voorspelling', path: '/forecast', color: '#1a44e8', bg: 'rgba(26,68,232,0.07)' },
-              { icon: Upload, label: 'Data uploaden', sub: 'Historische data importeren', path: '/data/upload', color: '#0891b2', bg: 'rgba(8,145,178,0.07)' },
+              { icon: Upload, label: 'Data uploaden', sub: 'Historische data importeren', path: '/data', state: { tab: 'uploaden' }, color: '#0891b2', bg: 'rgba(8,145,178,0.07)' },
               { icon: BarChart2, label: 'Performance', sub: 'Omzet & bezoekersanalyse', path: '/performance', color: '#7c3aed', bg: 'rgba(124,58,237,0.07)' },
               { icon: Package, label: 'Voorraad', sub: 'Stockbeheer & bestellingen', path: '/voorraad', color: '#059669', bg: 'rgba(5,150,105,0.07)' },
-            ].map(({ icon: Icon, label, sub, path, color, bg }) => (
+            ].map(({ icon: Icon, label, sub, path, state, color, bg }) => (
               <button
                 key={path}
-                onClick={() => navigate(path)}
+                onClick={() => navigate(path, state ? { state } : undefined)}
                 style={{
                   display: 'flex',
                   flexDirection: 'column',

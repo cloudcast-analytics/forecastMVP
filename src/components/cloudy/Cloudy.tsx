@@ -24,13 +24,9 @@ const PAGE_CONTEXT: Record<string, { greeting: string; suggestions: string[] }> 
     greeting: 'Welkom bij Performance! Hier zie je hoe je locatie het historisch heeft gedaan. Ik help je de data te interpreteren.',
     suggestions: ['Hoe vergelijk ik periodes?', 'Wat is een goede omzet per dag?', 'Wat doet de dagtype-grafiek?'],
   },
-  '/data/upload': {
-    greeting: 'Klaar om data te uploaden? Ik begeleid je door het proces. Zorg dat je bestand een datumkolom heeft.',
-    suggestions: ['Welk bestandsformaat werkt?', 'Wat zijn verplichte kolommen?', 'Wat als mijn data fouten heeft?'],
-  },
   '/data': {
-    greeting: 'Dit zijn alle geüploade observaties voor je locatie. Ik help je de data te begrijpen of beheren.',
-    suggestions: ['Hoe verwijder ik data?', 'Waarom mis ik sommige dagen?', 'Hoe exporteer ik data?'],
+    greeting: 'Hier beheer je je data: bekijk wat je al hebt geïmporteerd via "Overzicht", of upload een nieuw bestand via "Uploaden".',
+    suggestions: ['Hoe upload ik data?', 'Hoe verwijder ik data?', 'Hoe exporteer ik data?'],
   },
   '/organization': {
     greeting: 'In de organisatiemodule stel je afdelingen en functies in. Die gebruik ik later voor personeelsprognoses.',
@@ -51,7 +47,7 @@ const RESPONSES: Record<string, string> = {
   'hoe vergelijk ik periodes': 'Zet de schakelaar "Vergelijk met vorige periode" aan. De grafiek toont dan de huidige en vorige periode als twee lijnen naast elkaar.',
   'hoe voeg ik een afdeling toe': 'Ga naar Organisatie → tab Structuur → klik "+ Afdeling". Voeg daarna functies toe per afdeling.',
   'wat is de bezettingsevaluatie': 'Bij de tab Bezetting evalueer je dagelijks per afdeling of je onderbezet, voldoende of overbezet was. Die data helpt toekomstige roosters verbeteren.',
-  'hoe upload ik data': 'Ga naar "Upload data" in de navigatie. Je doorloopt 5 stappen: bestand → voorbeeld → koppelen → validatie → klaar.',
+  'hoe upload ik data': 'Ga naar "Data beheer" in de navigatie en open het tabje "Uploaden". Je doorloopt 5 stappen: bestand → voorbeeld → koppelen → validatie → klaar.',
   'wat doet cloudcast precies': 'CloudCast analyseert je historische verkoop- en bezoekersdata en genereert dagprognoses. Zo weet je elke ochtend hoe druk het wordt en hoeveel personeel je nodig hebt.',
 }
 

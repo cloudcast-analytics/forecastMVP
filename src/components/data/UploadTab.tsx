@@ -1,14 +1,13 @@
 import React, { useState } from 'react'
 import { CheckCircle, AlertCircle, Sparkles } from 'lucide-react'
-import Layout from '../components/layout/Layout'
-import Button from '../components/ui/Button'
-import FileUpload from '../components/data/FileUpload'
-import ColumnMapper from '../components/data/ColumnMapper'
-import { useApp } from '../context/AppContext'
-import { validateRow } from '../services/validationService'
-import { saveObservations } from '../services/supabaseService'
-import type { DailyObservation } from '../types/database'
-import { getDateFeatures } from '../lib/utils'
+import Button from '../ui/Button'
+import FileUpload from './FileUpload'
+import ColumnMapper from './ColumnMapper'
+import { useApp } from '../../context/AppContext'
+import { validateRow } from '../../services/validationService'
+import { saveObservations } from '../../services/supabaseService'
+import type { DailyObservation } from '../../types/database'
+import { getDateFeatures } from '../../lib/utils'
 
 type Step = 'upload' | 'preview' | 'map' | 'validate' | 'done'
 
@@ -17,7 +16,7 @@ const CLOUDY_TIPS: Record<string, string> = {
   preview: 'Ziet dit er goed uit? Controleer of de rijen kloppen en je de juiste kolommen ziet. Zijn er lege rijen of rare waarden? Dat los je op in de volgende stap.',
   map: 'Koppel elke kolom aan het juiste veld. Een datumkolom is verplicht. Ontbrekende kolommen kun je leeg laten — die data wordt dan niet geïmporteerd.',
   validate: 'Ik heb je data gecontroleerd. Ongeldige rijen (bijv. ontbrekende datum of tekst in een getallenveld) worden overgeslagen. Geldige rijen kun je gewoon importeren.',
-  done: 'Super! Je data is geïmporteerd. Ga naar de Forecast-pagina om te zien wat ik ervan maak. Hoe meer historische data je hebt, hoe nauwkeuriger de prognose.',
+  done: 'Super! Je data is geïmporteerd. Ga naar Overzicht om te zien wat ik ervan maak. Hoe meer historische data je hebt, hoe nauwkeuriger de prognose.',
 }
 
 function CloudyTip({ step }: { step: string }) {
@@ -42,7 +41,11 @@ function CloudyTip({ step }: { step: string }) {
   )
 }
 
-export default function UploadPage() {
+interface UploadTabProps {
+  onImported: () => void
+}
+
+export default function UploadTab({ onImported }: UploadTabProps) {
   const { selectedCompany, selectedLocation } = useApp()
   const [step, setStep] = useState<Step>('upload')
   const [rows, setRows] = useState<Record<string, string>[]>([])
@@ -139,13 +142,10 @@ export default function UploadPage() {
   const detectedColumns = rows.length > 0 ? Object.keys(rows[0]) : []
 
   return (
-    <Layout>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Data uploaden</h1>
-        <p className="text-slate-500 text-sm mt-1">
-          Locatie: <strong>{selectedLocation?.name ?? '—'}</strong>
-        </p>
-      </div>
+    <div>
+      <p className="text-slate-500 text-sm mb-6">
+        Locatie: <strong>{selectedLocation?.name ?? '—'}</strong>
+      </p>
 
       {!selectedLocation && (
         <div style={{
@@ -282,11 +282,11 @@ export default function UploadPage() {
             </p>
             <div className="flex justify-center gap-3">
               <Button variant="secondary" onClick={() => setStep('upload')}>Nog een bestand uploaden</Button>
-              <Button onClick={() => window.location.href = '/data'}>Naar mijn data</Button>
+              <Button onClick={onImported}>Naar overzicht</Button>
             </div>
           </div>
         </div>
       )}
-    </Layout>
+    </div>
   )
 }

@@ -4,11 +4,9 @@ import { AppProvider, useApp } from './context/AppContext'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import CompanyPage from './pages/CompanyPage'
-import UploadPage from './pages/UploadPage'
 import DataPage from './pages/DataPage'
 import ForecastPage from './pages/ForecastPage'
 import StaffingPage from './pages/StaffingPage'
-import DataManagementPage from './pages/DataManagementPage'
 import OrganizationPage from './pages/OrganizationPage'
 import PerformancePage from './pages/PerformancePage'
 import VoorraadPage from './pages/VoorraadPage'
@@ -33,10 +31,6 @@ function AppRoutes() {
         element={<ProtectedRoute><CompanyPage /></ProtectedRoute>}
       />
       <Route
-        path="/data/upload"
-        element={<ProtectedRoute><UploadPage /></ProtectedRoute>}
-      />
-      <Route
         path="/data"
         element={<ProtectedRoute><DataPage /></ProtectedRoute>}
       />
@@ -47,10 +41,6 @@ function AppRoutes() {
       <Route
         path="/staffing"
         element={<ProtectedRoute><StaffingPage /></ProtectedRoute>}
-      />
-      <Route
-        path="/settings/data-management"
-        element={<ProtectedRoute><DataManagementPage /></ProtectedRoute>}
       />
       <Route
         path="/organization"
