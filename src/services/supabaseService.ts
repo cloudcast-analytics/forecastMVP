@@ -1,5 +1,19 @@
 import { supabase, isDemo } from '../lib/supabase'
 import type { Company, DailyObservation, Department, DailyStaffingEvaluation, Location, LocationDepartment, LocationRole, Role, StaffingRule, UploadedFile } from '../types/database'
+import {
+  DEMO_COMPANY,
+  DEMO_DEPARTMENTS,
+  DEMO_LOCATION_DEPARTMENTS,
+  DEMO_LOCATION_DEPARTMENTS_2,
+  DEMO_LOCATION_ROLES,
+  DEMO_LOCATION_ROLES_2,
+  DEMO_LOCATION,
+  DEMO_LOCATION_2,
+  DEMO_ROLES,
+  DEMO_STAFFING_RULES,
+  DEMO_STAFFING_RULES_2,
+  getDemoObservations,
+} from '../data/demoSeed'
 
 // ─── Inventory types ──────────────────────────────────────────────────────────
 export interface InventoryItem {
@@ -90,21 +104,6 @@ export async function upsertSupplierConfig(cfg: SupplierConfig): Promise<void> {
     .upsert(cfg, { onConflict: 'location_id' })
   if (error) throw error
 }
-import {
-  DEMO_COMPANY,
-  DEMO_DEPARTMENTS,
-  DEMO_LOCATION_DEPARTMENTS,
-  DEMO_LOCATION_DEPARTMENTS_2,
-  DEMO_LOCATION_ROLES,
-  DEMO_LOCATION_ROLES_2,
-  DEMO_LOCATION,
-  DEMO_LOCATION_2,
-  DEMO_ROLES,
-  DEMO_STAFFING_RULES,
-  DEMO_STAFFING_RULES_2,
-  getDemoObservations,
-} from '../data/demoSeed'
-
 // Per-location in-memory stores for demo mode — mutations update these
 const demoStores = {
   observations: {} as Record<string, DailyObservation[]>,
