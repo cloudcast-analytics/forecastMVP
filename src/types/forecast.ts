@@ -1,3 +1,5 @@
+﻿import type { DepartmentAdvice } from './staffing'
+
 export type DemandLevel = 'Low' | 'Normal' | 'High' | 'Very High'
 
 export interface ForecastDay {
@@ -8,5 +10,7 @@ export interface ForecastDay {
   confidence_high: number
   demand_level: DemandLevel
   recommended_staff: number
+  staff_by_department: DepartmentAdvice[]
   key_reason: string
 }
+
