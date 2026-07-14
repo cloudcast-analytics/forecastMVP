@@ -1,14 +1,15 @@
-import { useEffect, useState, useMemo } from 'react'
+﻿import { useEffect, useState, useMemo } from 'react'
 import { Info, Lightbulb, Users, TrendingUp, AlertTriangle } from 'lucide-react'
 import Layout from '../components/layout/Layout'
 import Button from '../components/ui/Button'
 import ForecastChart from '../components/forecast/ForecastChart'
 import ForecastTable from '../components/forecast/ForecastTable'
 import { useApp } from '../context/AppContext'
-import { getObservations, getStaffingRules } from '../services/supabaseService'
+import { getDepartmentStaffingRules, getObservations } from '../services/supabaseService'
 import { generateForecast } from '../services/forecastService'
 import type { ForecastDay } from '../types/forecast'
-import type { DailyObservation, StaffingRule } from '../types/database'
+import type { DailyObservation } from '../types/database'
+import type { DepartmentStaffingRule } from '../types/staffing'
 
 type Horizon = 7 | 14
 
@@ -76,7 +77,7 @@ export default function ForecastPage() {
   const [forecast, setForecast] = useState<ForecastDay[]>([])
   const [loading, setLoading] = useState(false)
   const [observations, setObservations] = useState<DailyObservation[]>([])
-  const [staffingRules, setStaffingRules] = useState<StaffingRule[]>([])
+  const [staffingRules, setStaffingRules] = useState<DepartmentStaffingRule[]>([])
   const [loaded, setLoaded] = useState(false)
 
   const advice = useMemo(() => generateAdvice(forecast), [forecast])
@@ -85,7 +86,7 @@ export default function ForecastPage() {
     if (!selectedLocation) return
     Promise.all([
       getObservations(selectedLocation.id),
-      getStaffingRules(selectedLocation.id),
+      getDepartmentStaffingRules(selectedLocation.id),
     ]).then(([obs, rules]) => {
       setObservations(obs.filter(o => !o.deleted_at))
       setStaffingRules(rules)
@@ -93,12 +94,19 @@ export default function ForecastPage() {
     })
   }, [selectedLocation])
 
-  // Auto-generate on first load
   useEffect(() => {
-    if (loaded && observations.length > 0) {
-      runForecast()
-    }
-  }, [loaded])
+    if (!loaded || observations.length === 0) return
+    setLoading(true)
+    generateForecast(
+      observations,
+      horizon,
+      staffingRules,
+      selectedLocation?.id ?? 'demo-location',
+      selectedLocation?.city ?? 'Genk',
+    )
+      .then(setForecast)
+      .finally(() => setLoading(false))
+  }, [loaded, observations, horizon, selectedLocation, staffingRules])
 
   async function runForecast() {
     setLoading(true)
@@ -121,11 +129,10 @@ export default function ForecastPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Forecast</h1>
         <p className="text-slate-500 text-sm mt-1">
-          Gebaseerd op {observations.length} historische observaties
+          Verwachte omzet, bezoekers en bezetting per dag
         </p>
       </div>
 
-      {/* Controls */}
       <div className="flex items-center gap-4 mb-6">
         <div className="flex rounded-lg border border-slate-200 overflow-hidden">
           {([7, 14] as Horizon[]).map(h => (
@@ -156,11 +163,10 @@ export default function ForecastPage() {
 
       {!loading && forecast.length > 0 && (
         <>
-          {/* Cloudy Advies */}
           {advice.length > 0 && (
             <div style={{ marginBottom: '20px' }}>
               <p style={{ fontSize: '12px', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
-                ☁️ Cloudy adviseert
+                ?? Cloudy adviseert
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
                 {advice.map((a, i) => (
@@ -196,11 +202,7 @@ export default function ForecastPage() {
           </div>
           <div className="flex items-start gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
             <Info size={14} className="flex-shrink-0 mt-0.5" />
-            <span>
-              {forecast[0]?.key_reason === 'XGBoost voorspelling'
-                ? 'Voorspelling gegenereerd met XGBoost op basis van jouw historische data, verrijkt met weer- en kalenderfeatures.'
-                : 'Voorspelling op basis van historische patronen, seizoen en weer. Verbind de backend voor XGBoost-precisie.'}
-            </span>
+            <span>Voorspelling op basis van jouw historische data, het weer en de kalender. Wordt nauwkeuriger naarmate er meer data binnenkomt.</span>
           </div>
         </>
       )}
@@ -213,3 +215,6 @@ export default function ForecastPage() {
     </Layout>
   )
 }
+
+
+

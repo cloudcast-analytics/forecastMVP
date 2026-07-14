@@ -1,4 +1,4 @@
-import type { ForecastDay } from '../../types/forecast'
+﻿import type { ForecastDay } from '../../types/forecast'
 import { formatEuro, formatDate } from '../../lib/utils'
 import DemandBadge from './DemandBadge'
 
@@ -15,10 +15,9 @@ export default function ForecastTable({ forecast }: ForecastTableProps) {
             <th className="px-4 py-3 font-medium text-slate-600">Datum</th>
             <th className="px-4 py-3 font-medium text-slate-600">Verwachte omzet</th>
             <th className="px-4 py-3 font-medium text-slate-600">Bezoekers</th>
-            <th className="px-4 py-3 font-medium text-slate-600">Betrouwbaarheid</th>
             <th className="px-4 py-3 font-medium text-slate-600">Drukteniveau</th>
             <th className="px-4 py-3 font-medium text-slate-600">Personeel</th>
-            <th className="px-4 py-3 font-medium text-slate-600">Reden</th>
+            <th className="px-4 py-3 font-medium text-slate-600">Per afdeling</th>
           </tr>
         </thead>
         <tbody>
@@ -27,14 +26,13 @@ export default function ForecastTable({ forecast }: ForecastTableProps) {
               <td className="px-4 py-2.5 font-medium text-slate-800">{formatDate(f.forecast_date)}</td>
               <td className="px-4 py-2.5 text-slate-700">{formatEuro(f.predicted_revenue)}</td>
               <td className="px-4 py-2.5 text-slate-700">{f.predicted_visitors.toLocaleString('nl-BE')}</td>
-              <td className="px-4 py-2.5 text-slate-500 text-xs">
-                {formatEuro(f.confidence_low)} – {formatEuro(f.confidence_high)}
-              </td>
               <td className="px-4 py-2.5">
                 <DemandBadge level={f.demand_level} />
               </td>
               <td className="px-4 py-2.5 font-medium text-slate-700">{f.recommended_staff}</td>
-              <td className="px-4 py-2.5 text-slate-500 text-xs max-w-[180px] truncate">{f.key_reason}</td>
+              <td className="px-4 py-2.5 text-slate-500 text-xs">
+                {f.staff_by_department.map(d => `${d.department_name} ${d.staff}`).join(' · ') || '—'}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -42,3 +40,4 @@ export default function ForecastTable({ forecast }: ForecastTableProps) {
     </div>
   )
 }
+
