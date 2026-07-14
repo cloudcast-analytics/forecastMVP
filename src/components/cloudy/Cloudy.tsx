@@ -12,6 +12,10 @@ const PAGE_CONTEXT: Record<string, { greeting: string; suggestions: string[] }> 
     greeting: 'Hallo! Ik ben Cloudy ☁️ Je AI-assistent voor CloudCast. Op het dashboard zie je een overzicht van je locatie. Wat wil je weten?',
     suggestions: ['Hoe interpreteer ik het dashboard?', 'Wat doet CloudCast precies?', 'Hoe upload ik data?'],
   },
+  '/company': {
+    greeting: 'Hier zie je je bedrijfsgegevens en locaties.',
+    suggestions: ['Hoe voeg ik een locatie toe?', 'Wat doet CloudCast precies?'],
+  },
   '/forecast': {
     greeting: 'Op de forecastpagina kun je zien hoe druk het de komende dagen wordt. Ik kan je helpen de voorspellingen te interpreteren.',
     suggestions: ['Hoe werkt de forecast?', 'Hoe plan ik personeel op basis hiervan?', 'Wat is de drukste dag?'],

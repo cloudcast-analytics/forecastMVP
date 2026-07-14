@@ -3,8 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { AppProvider, useApp } from './context/AppContext'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
-import CompaniesPage from './pages/CompaniesPage'
-import LocationsPage from './pages/LocationsPage'
+import CompanyPage from './pages/CompanyPage'
 import UploadPage from './pages/UploadPage'
 import DataPage from './pages/DataPage'
 import ForecastPage from './pages/ForecastPage'
@@ -30,12 +29,8 @@ function AppRoutes() {
         element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}
       />
       <Route
-        path="/companies"
-        element={<ProtectedRoute><CompaniesPage /></ProtectedRoute>}
-      />
-      <Route
-        path="/locations"
-        element={<ProtectedRoute><LocationsPage /></ProtectedRoute>}
+        path="/company"
+        element={<ProtectedRoute><CompanyPage /></ProtectedRoute>}
       />
       <Route
         path="/data/upload"

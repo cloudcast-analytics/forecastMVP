@@ -1,22 +1,19 @@
 import React, { useState } from 'react'
-import { Plus, MapPin } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Plus, Building2, MapPin } from 'lucide-react'
 import Layout from '../components/layout/Layout'
 import Button from '../components/ui/Button'
 import Modal from '../components/ui/Modal'
 import { useApp } from '../context/AppContext'
 import { createLocation } from '../services/supabaseService'
 
-export default function LocationsPage() {
-  const { locations, selectedCompany, isDemo } = useApp()
+export default function CompanyPage() {
+  const { role, selectedCompany, locations, selectedLocation, setSelectedLocation, isDemo } = useApp()
+  const navigate = useNavigate()
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState({
-    name: '',
-    address: '',
-    city: '',
-    country: 'België',
-    location_type: '',
-    max_capacity: '',
-    notes: '',
+    name: '', address: '', city: '', country: 'België',
+    location_type: '', max_capacity: '', notes: '',
   })
   const [saving, setSaving] = useState(false)
 
@@ -33,10 +30,69 @@ export default function LocationsPage() {
     setShowModal(false)
   }
 
+  if (role !== 'admin') {
+    return (
+      <Layout>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-slate-900">Mijn locaties</h1>
+          <p className="text-slate-500 text-sm mt-1">{selectedCompany?.name ?? '—'}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm divide-y divide-slate-100">
+          {locations.map(l => (
+            <button
+              key={l.id}
+              onClick={() => { setSelectedLocation(l); navigate('/dashboard') }}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 transition-colors ${l.id === selectedLocation?.id ? 'bg-blue-50' : ''}`}
+            >
+              <MapPin size={15} className="text-slate-400 flex-shrink-0" />
+              <span className="flex-1 font-medium text-slate-900 text-sm">{l.name}</span>
+              <span className="text-sm text-slate-500">{l.city}</span>
+              {l.id === selectedLocation?.id && (
+                <span className="text-xs text-blue-600 font-medium">Actief</span>
+              )}
+            </button>
+          ))}
+          {locations.length === 0 && (
+            <div className="text-center py-12 text-slate-400 text-sm">Nog geen locaties.</div>
+          )}
+        </div>
+      </Layout>
+    )
+  }
+
   return (
     <Layout>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Locaties</h1>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900">Bedrijf</h1>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-8">
+        <div className="flex items-center gap-2 mb-3">
+          <Building2 size={16} className="text-slate-400" />
+          <h2 className="font-semibold text-slate-900 text-sm">{selectedCompany?.name ?? '—'}</h2>
+        </div>
+        <dl className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <dt className="text-slate-400 text-xs mb-0.5">Sector</dt>
+            <dd className="text-slate-700">{selectedCompany?.sector || '—'}</dd>
+          </div>
+          <div>
+            <dt className="text-slate-400 text-xs mb-0.5">Contactpersoon</dt>
+            <dd className="text-slate-700">{selectedCompany?.contact_name || '—'}</dd>
+          </div>
+          <div>
+            <dt className="text-slate-400 text-xs mb-0.5">E-mail</dt>
+            <dd className="text-slate-700">{selectedCompany?.contact_email || '—'}</dd>
+          </div>
+          <div>
+            <dt className="text-slate-400 text-xs mb-0.5">Telefoon</dt>
+            <dd className="text-slate-700">{selectedCompany?.phone || '—'}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-semibold text-slate-900 text-sm">Locaties</h2>
         {!isDemo && (
           <Button onClick={() => setShowModal(true)}>
             <Plus size={16} />
