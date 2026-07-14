@@ -727,7 +727,7 @@ export default function VoorraadPage() {
               onProductsChange={setProducts}
               locationId={locationId}
               forecast={forecast}
-              hasEnoughData={observations.length >= 14}
+              hasEnoughData={hasEnoughData}
               wastePct={settings.waste_percentage}
             />
           )}

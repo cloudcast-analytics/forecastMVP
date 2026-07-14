@@ -34,7 +34,7 @@ export default function StaffingPage() {
   const [departments, setDepartments] = useState<Department[]>([])
   const [forms, setForms] = useState<Record<string, RuleForm>>({})
   const [rules, setRules] = useState<DepartmentStaffingRule[]>([])
-  const [settings, setSettings] = useState<LocationSettings>({ hourly_wage: 14, shift_hours: 8 })
+  const [settings, setSettings] = useState<LocationSettings>({ hourly_wage: 14, shift_hours: 8, waste_percentage: 3 })
   const [savedDept, setSavedDept] = useState<string | null>(null)
 
   useEffect(() => {
