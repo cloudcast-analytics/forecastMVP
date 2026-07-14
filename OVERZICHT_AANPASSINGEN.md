@@ -9,6 +9,10 @@
 
 ## Changelog
 
+### 14-07-2026 — Vini G
+- **Navigatie-consolidatie** — Sidebar teruggebracht van 11 naar 7 items. "Bedrijven"/"Locaties" vervangen door een klikbare bedrijf/locatie-kaart die naar één `/company`-pagina navigeert (admin: beheer, klant: locatielijst). "Upload data"/"Mijn data"/"Data beheer" samengevoegd tot één "Data beheer"-tab met sub-tabs Overzicht/Uploaden.
+- **Demo-rolwisselaar** — In demo-modus kan je via de sidebar-kaart wisselen tussen "Admin" en "Klant" om beide weergaves te bekijken.
+
 ### 12-07-2026 — Vini G
 - **Personeelsengine per afdeling** — Bezetting per afdeling (basis / drukte / evenement-drempel) vervangt de platte bezoekersregels. Drukteniveau en bezetting komen uit dezelfde berekening.
 - **Dashboard herbouwd** — Gericht op de vier uitbatersvragen: verwachte omzet, wie waar inplannen (per afdeling, met delta), besparing t.o.v. vaste planning, volgend bestelmoment. Meta-informatie verwijderd.
@@ -93,6 +97,9 @@
 - Idee: admin (CloudCast) richt bedrijf/locatie(s)/personeelsregels in; de klant geeft zijn e-mailadres door en ontvangt een uitnodigingsmail (link om zelf in te loggen/wachtwoord in te stellen).
 - Nieuw "account"-tabje nodig in de sidebar, ter hoogte van het huidige e-mailadres boven de uitlogknop.
 - Nog te bepalen: welke informatie/acties in dat accounttabje komen, hoe de uitnodigingsmail precies werkt.
+
+### 12. Navigatie-consolidatie (sidebar, bedrijf/locaties, data-tabs)
+**Status:** [x] Afgerond (14-07-2026)
 
 ---
 
