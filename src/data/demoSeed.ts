@@ -1,5 +1,6 @@
 ﻿import type { Company, DailyObservation, Department, DailyStaffingEvaluation, Location, LocationDepartment, LocationRole, Role } from '../types/database'
 import type { DepartmentStaffingRule } from '../types/staffing'
+import type { Order, Product, SupplierConfig } from '../types/inventory'
 import { getWeekNumber, getSeason } from '../lib/utils'
 import { isPublicHoliday, isSchoolHoliday } from '../lib/calendar'
 import { computeStaffing, getDemandLevel } from '../services/staffingService'
@@ -91,6 +92,47 @@ export const DEMO_DEPARTMENT_STAFFING_RULES_2: DepartmentStaffingRule[] = [
 ]
 
 export const DEMO_STAFFING_EVALUATIONS: DailyStaffingEvaluation[] = []
+
+// ─── Inventory & bestelflow demo-data ────────────────────────────────────────
+
+export const DEMO_SUPPLIER: SupplierConfig = {
+  location_id: 'demo-location',
+  supplier_name: 'Alken-Maes',
+  supplier_email: 'bestellingen@alken-maes.be',
+}
+
+export const DEMO_SUPPLIER_2: SupplierConfig = {
+  location_id: 'demo-location-2',
+  supplier_name: 'Alken-Maes',
+  supplier_email: 'bestellingen@alken-maes.be',
+}
+
+export const DEMO_PRODUCTS: Product[] = [
+  // Bier
+  { id: 'prod-jupiler',  company_id: 'demo-company', location_id: 'demo-location', name: 'Jupiler',        category: 'Bier',      unit: 'blik',  order_unit: 'krat (24 blikken)',  order_unit_size: 24, par_level: 10, current_stock: 72,  consume_per_visitor: 0.18 },
+  { id: 'prod-stella',   company_id: 'demo-company', location_id: 'demo-location', name: 'Stella Artois',  category: 'Bier',      unit: 'blik',  order_unit: 'krat (24 blikken)',  order_unit_size: 24, par_level: 8,  current_stock: 144, consume_per_visitor: 0.12 },
+  { id: 'prod-leffe',    company_id: 'demo-company', location_id: 'demo-location', name: 'Leffe Bruin',    category: 'Bier',      unit: 'fles',  order_unit: 'krat (24 flessen)',  order_unit_size: 24, par_level: 4,  current_stock: 24,  consume_per_visitor: 0.06 },
+  { id: 'prod-karmeliet',company_id: 'demo-company', location_id: 'demo-location', name: 'Karmeliet',      category: 'Bier',      unit: 'fles',  order_unit: 'krat (24 flessen)',  order_unit_size: 24, par_level: 3,  current_stock: 24,  consume_per_visitor: 0.04 },
+  // Frisdrank
+  { id: 'prod-cola',     company_id: 'demo-company', location_id: 'demo-location', name: 'Coca-Cola',      category: 'Frisdrank', unit: 'blik',  order_unit: 'krat (24 blikken)',  order_unit_size: 24, par_level: 6,  current_stock: 120, consume_per_visitor: 0.10 },
+  { id: 'prod-sprite',   company_id: 'demo-company', location_id: 'demo-location', name: 'Sprite',         category: 'Frisdrank', unit: 'blik',  order_unit: 'krat (24 blikken)',  order_unit_size: 24, par_level: 4,  current_stock: 24,  consume_per_visitor: 0.06 },
+  { id: 'prod-tonic',    company_id: 'demo-company', location_id: 'demo-location', name: 'Fever-Tree Tonic',category: 'Frisdrank',unit: 'flesje',order_unit: 'krat (24 flesjes)', order_unit_size: 24, par_level: 3,  current_stock: 72,  consume_per_visitor: 0.05 },
+  // Wijn
+  { id: 'prod-rose',     company_id: 'demo-company', location_id: 'demo-location', name: 'Rosé 75cl',      category: 'Wijn',      unit: 'fles',  order_unit: 'doos (6 flessen)',   order_unit_size: 6,  par_level: 6,  current_stock: 24,  consume_per_visitor: 0.03 },
+  { id: 'prod-wit',      company_id: 'demo-company', location_id: 'demo-location', name: 'Witte wijn 75cl',category: 'Wijn',      unit: 'fles',  order_unit: 'doos (6 flessen)',   order_unit_size: 6,  par_level: 4,  current_stock: 24,  consume_per_visitor: 0.02 },
+  // Cocktail ingrediënten
+  { id: 'prod-gin',      company_id: 'demo-company', location_id: 'demo-location', name: "Hendrick's Gin", category: 'Cocktail',  unit: 'fles',  order_unit: 'fles (70cl)',        order_unit_size: 1,  par_level: 5,  current_stock: 2,   consume_per_visitor: 0.02 },
+  { id: 'prod-campari',  company_id: 'demo-company', location_id: 'demo-location', name: 'Campari',        category: 'Cocktail',  unit: 'fles',  order_unit: 'fles (70cl)',        order_unit_size: 1,  par_level: 3,  current_stock: 3,   consume_per_visitor: 0.01 },
+  { id: 'prod-triplesec',company_id: 'demo-company', location_id: 'demo-location', name: 'Triple Sec',     category: 'Cocktail',  unit: 'fles',  order_unit: 'fles (70cl)',        order_unit_size: 1,  par_level: 3,  current_stock: 1,   consume_per_visitor: 0.01 },
+]
+
+export const DEMO_PRODUCTS_2: Product[] = [
+  { id: 'prod2-jupiler', company_id: 'demo-company', location_id: 'demo-location-2', name: 'Jupiler',       category: 'Bier',      unit: 'blik',  order_unit: 'krat (24 blikken)', order_unit_size: 24, par_level: 6,  current_stock: 48, consume_per_visitor: 0.18 },
+  { id: 'prod2-cola',    company_id: 'demo-company', location_id: 'demo-location-2', name: 'Coca-Cola',     category: 'Frisdrank', unit: 'blik',  order_unit: 'krat (24 blikken)', order_unit_size: 24, par_level: 4,  current_stock: 48, consume_per_visitor: 0.10 },
+  { id: 'prod2-rose',    company_id: 'demo-company', location_id: 'demo-location-2', name: 'Rosé 75cl',     category: 'Wijn',      unit: 'fles',  order_unit: 'doos (6 flessen)',  order_unit_size: 6,  par_level: 4,  current_stock: 12, consume_per_visitor: 0.03 },
+]
+
+export const DEMO_ORDERS: Order[] = []
 
 function seededRand(seed: number): number {
   const x = Math.sin(seed + 1) * 10000

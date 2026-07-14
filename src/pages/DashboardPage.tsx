@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import Layout from '../components/layout/Layout'
 import { useApp } from '../context/AppContext'
-import { getDepartmentStaffingRules, getObservations } from '../services/supabaseService'
+import { getDepartmentStaffingRules, getObservations, getOrders, getProducts } from '../services/supabaseService'
 import { generateForecast } from '../services/forecastService'
 import { computeStaffing, getDemandLevel, maxStaffing } from '../services/staffingService'
 import { getLocationSettings } from '../services/settingsService'
@@ -14,6 +14,7 @@ import { getMockWeather } from '../services/weatherService'
 import type { DailyObservation } from '../types/database'
 import type { DepartmentStaffingRule } from '../types/staffing'
 import type { ForecastDay } from '../types/forecast'
+import type { Order, Product } from '../types/inventory'
 import { formatEuro } from '../lib/utils'
 
 const HOURLY_PATTERN = [
@@ -86,6 +87,8 @@ export default function DashboardPage() {
   const [observations, setObservations] = useState<DailyObservation[]>([])
   const [rules, setRules] = useState<DepartmentStaffingRule[]>([])
   const [weekForecast, setWeekForecast] = useState<ForecastDay[]>([])
+  const [products, setProducts] = useState<Product[]>([])
+  const [pendingOrder, setPendingOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [now, setNow] = useState(new Date())
 
@@ -100,9 +103,13 @@ export default function DashboardPage() {
     Promise.all([
       getObservations(selectedLocation.id),
       getDepartmentStaffingRules(selectedLocation.id),
-    ]).then(([obs, deptRules]) => {
+      getProducts(selectedLocation.id),
+      getOrders(selectedLocation.id),
+    ]).then(([obs, deptRules, prods, orders]) => {
       setObservations(obs.filter(o => !o.deleted_at))
       setRules(deptRules)
+      setProducts(prods)
+      setPendingOrder(orders.find(o => o.status === 'voorstel' || o.status === 'goedgekeurd') ?? null)
       setLoading(false)
     })
   }, [selectedLocation])
@@ -136,15 +143,10 @@ export default function DashboardPage() {
     }))
   }, [todayEst])
 
-  const lowStockAlerts = useMemo(() => {
-    try {
-      const raw = localStorage.getItem(`cloudcast_voorraad_${selectedLocation?.id ?? 'default'}`)
-      const items: { name: string; current_stock: number; min_stock: number }[] = raw ? JSON.parse(raw) : []
-      return items.filter(item => item.current_stock <= item.min_stock)
-    } catch {
-      return []
-    }
-  }, [selectedLocation])
+  const lowStockAlerts = useMemo(
+    () => products.filter(p => (p.current_stock / p.order_unit_size) < p.par_level),
+    [products]
+  )
 
   const currentHour = now.getHours()
   const dateLabel = `${NL_DAYS[now.getDay()]} ${now.getDate()} ${NL_MONTHS[now.getMonth()]}`
@@ -201,8 +203,8 @@ export default function DashboardPage() {
             }}>
               <AlertTriangle size={16} color="#ea580c" style={{ flexShrink: 0 }} />
               <p style={{ fontSize: '13px', color: '#c2410c', flex: 1 }}>
-                <strong>{lowStockAlerts.length} product{lowStockAlerts.length > 1 ? 'en' : ''} onder minimumvoorraad:</strong>{' '}
-                {lowStockAlerts.map(item => item.name).join(', ')}
+                <strong>{lowStockAlerts.length} product{lowStockAlerts.length > 1 ? 'en' : ''} onder par-level:</strong>{' '}
+                {lowStockAlerts.map(p => p.name).join(', ')}
               </p>
               <ChevronRight size={14} color="#ea580c" />
             </button>
@@ -260,14 +262,28 @@ export default function DashboardPage() {
           </div>
 
           <div style={{ ...CARD_STYLE, padding: '16px 20px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(5,150,105,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <ShoppingCart size={18} color="#059669" />
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: pendingOrder ? 'rgba(234,88,12,0.07)' : 'rgba(5,150,105,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <ShoppingCart size={18} color={pendingOrder ? '#ea580c' : '#059669'} />
             </div>
             <div style={{ flex: 1 }}>
-              <p style={{ fontSize: '14px', fontWeight: 600, color: '#1a1f36' }}>Volgend bestelmoment: {order.label}</p>
-              <p style={{ fontSize: '12px', color: '#9ca3af' }}>Bekijk je voorraad en bereid de brouwerijbestelling voor.</p>
+              {pendingOrder?.status === 'voorstel' ? (
+                <>
+                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#1a1f36' }}>Openstaand bestelvoorstel</p>
+                  <p style={{ fontSize: '12px', color: '#9ca3af' }}>{pendingOrder.lines.length} producten · klik om te bekijken en goed te keuren</p>
+                </>
+              ) : pendingOrder?.status === 'goedgekeurd' ? (
+                <>
+                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#1a1f36' }}>Bestelling verstuurd</p>
+                  <p style={{ fontSize: '12px', color: '#9ca3af' }}>Wachten op levering · klik om te bevestigen</p>
+                </>
+              ) : (
+                <>
+                  <p style={{ fontSize: '14px', fontWeight: 600, color: '#1a1f36' }}>Volgend bestelmoment: {order.label}</p>
+                  <p style={{ fontSize: '12px', color: '#9ca3af' }}>Bekijk je voorraad en bereid de brouwerijbestelling voor.</p>
+                </>
+              )}
             </div>
-            <button onClick={() => navigate('/voorraad')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>
+            <button onClick={() => navigate('/voorraad', pendingOrder ? { state: { tab: 'bestellen' } } : undefined)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af' }}>
               <ChevronRight size={18} />
             </button>
           </div>

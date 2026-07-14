@@ -1,6 +1,7 @@
 ﻿import { supabase, isDemo } from '../lib/supabase'
 import type { Company, DailyObservation, Department, DailyStaffingEvaluation, Location, LocationDepartment, LocationRole, Role, UploadedFile } from '../types/database'
 import type { DepartmentStaffingRule } from '../types/staffing'
+import type { Order, Product, SupplierConfig as InventorySupplierConfig } from '../types/inventory'
 import {
   DEMO_COMPANY,
   DEMO_DEPARTMENT_STAFFING_RULES,
@@ -12,7 +13,12 @@ import {
   DEMO_LOCATION_ROLES_2,
   DEMO_LOCATION,
   DEMO_LOCATION_2,
+  DEMO_ORDERS,
+  DEMO_PRODUCTS,
+  DEMO_PRODUCTS_2,
   DEMO_ROLES,
+  DEMO_SUPPLIER,
+  DEMO_SUPPLIER_2,
   getDemoObservations,
 } from '../data/demoSeed'
 
@@ -121,6 +127,18 @@ const demoStores = {
     'demo-location': DEMO_DEPARTMENT_STAFFING_RULES.map(r => ({ ...r })),
     'demo-location-2': DEMO_DEPARTMENT_STAFFING_RULES_2.map(r => ({ ...r })),
   } as Record<string, DepartmentStaffingRule[]>,
+  products: {
+    'demo-location': DEMO_PRODUCTS.map(p => ({ ...p })),
+    'demo-location-2': DEMO_PRODUCTS_2.map(p => ({ ...p })),
+  } as Record<string, Product[]>,
+  supplierConfigs: {
+    'demo-location': { ...DEMO_SUPPLIER },
+    'demo-location-2': { ...DEMO_SUPPLIER_2 },
+  } as Record<string, InventorySupplierConfig>,
+  orders: {
+    'demo-location': [...DEMO_ORDERS],
+    'demo-location-2': [],
+  } as Record<string, Order[]>,
 }
 
 export async function getCompanies(): Promise<Company[]> {
@@ -376,5 +394,106 @@ export async function upsertDepartmentStaffingRule(rule: Omit<DepartmentStaffing
     .from('department_staffing_rules')
     .upsert(dbRule, { onConflict: 'location_id,department_id' })
   if (error) throw error
+}
+
+// ─── Products ─────────────────────────────────────────────────────────────────
+
+export async function getProducts(locationId: string): Promise<Product[]> {
+  if (isDemo) return demoStores.products[locationId] ?? []
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('location_id', locationId)
+    .order('category')
+    .order('name')
+  if (error) throw error
+  return data as Product[]
+}
+
+export async function upsertProduct(product: Product): Promise<void> {
+  if (isDemo) {
+    const store = demoStores.products[product.location_id] ?? []
+    const idx = store.findIndex(p => p.id === product.id)
+    if (idx >= 0) store[idx] = product
+    else store.push(product)
+    demoStores.products[product.location_id] = store
+    return
+  }
+  const { error } = await supabase.from('products').upsert(product, { onConflict: 'id' })
+  if (error) throw error
+}
+
+export async function deleteProduct(id: string, locationId: string): Promise<void> {
+  if (isDemo) {
+    demoStores.products[locationId] = (demoStores.products[locationId] ?? []).filter(p => p.id !== id)
+    return
+  }
+  const { error } = await supabase.from('products').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function updateProductStock(productId: string, locationId: string, newStock: number): Promise<void> {
+  if (isDemo) {
+    const store = demoStores.products[locationId] ?? []
+    const idx = store.findIndex(p => p.id === productId)
+    if (idx >= 0) store[idx] = { ...store[idx], current_stock: Math.max(0, newStock) }
+    return
+  }
+  const { error } = await supabase.from('products').update({ current_stock: newStock }).eq('id', productId)
+  if (error) throw error
+}
+
+// ─── Supplier config ──────────────────────────────────────────────────────────
+
+export async function getInventorySupplierConfig(locationId: string): Promise<InventorySupplierConfig | null> {
+  if (isDemo) return demoStores.supplierConfigs[locationId] ?? null
+  const { data } = await supabase
+    .from('supplier_config')
+    .select('*')
+    .eq('location_id', locationId)
+    .single()
+  return data as InventorySupplierConfig | null
+}
+
+export async function upsertInventorySupplierConfig(cfg: InventorySupplierConfig): Promise<void> {
+  if (isDemo) {
+    demoStores.supplierConfigs[cfg.location_id] = { ...cfg }
+    return
+  }
+  const { error } = await supabase
+    .from('supplier_config')
+    .upsert(cfg, { onConflict: 'location_id' })
+  if (error) throw error
+}
+
+// ─── Orders ───────────────────────────────────────────────────────────────────
+
+export async function getOrders(locationId: string): Promise<Order[]> {
+  if (isDemo) return demoStores.orders[locationId] ?? []
+  const { data, error } = await supabase
+    .from('orders')
+    .select('*, order_lines(*)')
+    .eq('location_id', locationId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data as Order[]
+}
+
+export async function upsertOrder(order: Order): Promise<void> {
+  if (isDemo) {
+    const store = demoStores.orders[order.location_id] ?? []
+    const idx = store.findIndex(o => o.id === order.id)
+    if (idx >= 0) store[idx] = order
+    else store.push(order)
+    demoStores.orders[order.location_id] = store
+    return
+  }
+  const { lines, ...orderRow } = order
+  const { error: orderErr } = await supabase.from('orders').upsert(orderRow, { onConflict: 'id' })
+  if (orderErr) throw orderErr
+  for (const line of lines) {
+    const { error: lineErr } = await supabase.from('order_lines').upsert({ ...line, order_id: order.id }, { onConflict: 'order_id,product_id' })
+    if (lineErr) throw lineErr
+  }
 }
 
