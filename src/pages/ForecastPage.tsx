@@ -5,11 +5,12 @@ import Button from '../components/ui/Button'
 import ForecastChart from '../components/forecast/ForecastChart'
 import ForecastTable from '../components/forecast/ForecastTable'
 import { useApp } from '../context/AppContext'
-import { getDepartmentStaffingRules, getObservations } from '../services/supabaseService'
+import { getDepartmentStaffingRules, getObservations, getEvents } from '../services/supabaseService'
 import { generateForecast } from '../services/forecastService'
 import type { ForecastDay } from '../types/forecast'
 import type { DailyObservation } from '../types/database'
 import type { DepartmentStaffingRule } from '../types/staffing'
+import type { Evenement } from '../types/events'
 
 type Horizon = 7 | 14
 
@@ -78,6 +79,7 @@ export default function ForecastPage() {
   const [loading, setLoading] = useState(false)
   const [observations, setObservations] = useState<DailyObservation[]>([])
   const [staffingRules, setStaffingRules] = useState<DepartmentStaffingRule[]>([])
+  const [events, setEvents] = useState<Evenement[]>([])
   const [loaded, setLoaded] = useState(false)
 
   const advice = useMemo(() => generateAdvice(forecast), [forecast])
@@ -87,9 +89,11 @@ export default function ForecastPage() {
     Promise.all([
       getObservations(selectedLocation.id),
       getDepartmentStaffingRules(selectedLocation.id),
-    ]).then(([obs, rules]) => {
+      getEvents(selectedLocation.id),
+    ]).then(([obs, rules, evts]) => {
       setObservations(obs.filter(o => !o.deleted_at))
       setStaffingRules(rules)
+      setEvents(evts)
       setLoaded(true)
     })
   }, [selectedLocation])
@@ -103,10 +107,11 @@ export default function ForecastPage() {
       staffingRules,
       selectedLocation?.id ?? 'demo-location',
       selectedLocation?.city ?? 'Genk',
+      events,
     )
       .then(setForecast)
       .finally(() => setLoading(false))
-  }, [loaded, observations, horizon, selectedLocation, staffingRules])
+  }, [loaded, observations, horizon, selectedLocation, staffingRules, events])
 
   async function runForecast() {
     setLoading(true)
@@ -117,6 +122,7 @@ export default function ForecastPage() {
         staffingRules,
         selectedLocation?.id ?? 'demo-location',
         selectedLocation?.city ?? 'Genk',
+        events,
       )
       setForecast(result)
     } finally {

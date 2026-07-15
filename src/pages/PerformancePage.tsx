@@ -4,6 +4,7 @@ import { TrendingUp, TrendingDown, Euro, Users, Award, Clock } from 'lucide-reac
 import Layout from '../components/layout/Layout'
 import { useApp } from '../context/AppContext'
 import { getObservations } from '../services/supabaseService'
+import { getLocationSettings } from '../services/settingsService'
 import type { DailyObservation } from '../types/database'
 import { formatEuro } from '../lib/utils'
 
@@ -127,6 +128,7 @@ export default function PerformancePage() {
   const [period, setPeriod] = useState<Period>('30d')
   const [view, setView] = useState<View>('omzet')
   const [compare, setCompare] = useState(false)
+  const showUurTrends = getLocationSettings(selectedLocation?.id ?? 'default').modules.uur_trends
 
   useEffect(() => {
     if (!selectedLocation) return
@@ -274,7 +276,7 @@ export default function PerformancePage() {
             {([
               { key: 'omzet', label: 'Omzet' },
               { key: 'bezoekers', label: 'Bezoekers' },
-              { key: 'uur-trends', label: 'Uur-trends', icon: true },
+              ...(showUurTrends ? [{ key: 'uur-trends' as View, label: 'Uur-trends', icon: true }] : []),
             ] as { key: View; label: string; icon?: boolean }[]).map(({ key, label, icon }) => (
               <button key={key} onClick={() => setView(key)} style={{
                 display: 'flex', alignItems: 'center', gap: '5px',

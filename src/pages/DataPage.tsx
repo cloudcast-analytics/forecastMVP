@@ -3,8 +3,15 @@ import { useLocation } from 'react-router-dom'
 import Layout from '../components/layout/Layout'
 import OverviewTab from '../components/data/OverviewTab'
 import UploadTab from '../components/data/UploadTab'
+import HourlyUploadTab from '../components/data/HourlyUploadTab'
 
-type Tab = 'overzicht' | 'uploaden'
+type Tab = 'overzicht' | 'uploaden' | 'uurdata'
+
+const TAB_LABELS: Record<Tab, string> = {
+  overzicht: 'Overzicht',
+  uploaden: 'Dagdata uploaden',
+  uurdata: 'Uurdata uploaden',
+}
 
 export default function DataPage() {
   const location = useLocation()
@@ -19,7 +26,7 @@ export default function DataPage() {
       </div>
 
       <div className="flex gap-1 mb-6 bg-slate-100 rounded-xl p-1 w-fit">
-        {(['overzicht', 'uploaden'] as Tab[]).map(tab => (
+        {(['overzicht', 'uploaden', 'uurdata'] as Tab[]).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -30,13 +37,14 @@ export default function DataPage() {
                 : 'text-slate-500 hover:text-slate-700',
             ].join(' ')}
           >
-            {tab === 'overzicht' ? 'Overzicht' : 'Uploaden'}
+            {TAB_LABELS[tab]}
           </button>
         ))}
       </div>
 
       {activeTab === 'overzicht' && <OverviewTab />}
       {activeTab === 'uploaden' && <UploadTab onImported={() => setActiveTab('overzicht')} />}
+      {activeTab === 'uurdata' && <HourlyUploadTab onImported={() => setActiveTab('overzicht')} />}
     </Layout>
   )
 }

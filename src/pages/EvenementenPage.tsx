@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Calendar, Plus, Trash2, Users, Info } from 'lucide-react'
+import { Calendar, Plus, Trash2, Users, Info, Link2, Save } from 'lucide-react'
 import Layout from '../components/layout/Layout'
 import Button from '../components/ui/Button'
 import { useApp } from '../context/AppContext'
 import { getDepartments } from '../services/supabaseService'
 import { getEvents, upsertEvent, deleteEvent } from '../services/supabaseService'
+import { getLocationSettings, saveLocationSettings } from '../services/settingsService'
 import type { Department } from '../types/database'
 import type { Evenement, EvenementType } from '../types/events'
 
@@ -75,10 +76,14 @@ export default function EvenementenPage() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [loading, setLoading] = useState(true)
+  const [icsUrl, setIcsUrl] = useState('')
+  const [icsSaved, setIcsSaved] = useState(false)
 
   useEffect(() => {
     if (!selectedLocation) return
     setLoading(true)
+    const settings = getLocationSettings(locationId)
+    setIcsUrl(settings.ics_feed_url)
     Promise.all([
       getEvents(locationId),
       getDepartments(companyId),
@@ -88,6 +93,13 @@ export default function EvenementenPage() {
       setLoading(false)
     })
   }, [selectedLocation, locationId, companyId])
+
+  function handleSaveIcsUrl() {
+    const settings = getLocationSettings(locationId)
+    saveLocationSettings(locationId, { ...settings, ics_feed_url: icsUrl.trim() })
+    setIcsSaved(true)
+    setTimeout(() => setIcsSaved(false), 2000)
+  }
 
   async function handleSave() {
     if (!form.name.trim() || !form.date) return
@@ -285,6 +297,36 @@ export default function EvenementenPage() {
           )}
         </>
       )}
+      {/* ICS-feed koppeling */}
+      <div style={{ marginTop: '40px', borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '28px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          <Link2 size={15} color="#6b7280" />
+          <p style={{ fontSize: '14px', fontWeight: 600, color: '#1a1f36' }}>Google Calendar koppelen</p>
+        </div>
+        <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.5, marginBottom: '14px' }}>
+          Plak hier de publieke ICS-feed-URL van je Google Calendar (rechtermuisknop op kalender → "Instellingen en delen" → kopieer de ICS-link).
+          De backend importeert geboekte slots automatisch als evenement-concepten.
+        </p>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <input
+            type="url"
+            value={icsUrl}
+            onChange={e => setIcsUrl(e.target.value)}
+            placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"
+            style={{
+              flex: 1, padding: '8px 12px', borderRadius: '8px',
+              border: '1px solid #e5e7eb', fontSize: '13px', outline: 'none', background: 'white',
+              fontFamily: 'monospace',
+            }}
+          />
+          <Button onClick={handleSaveIcsUrl} variant={icsSaved ? 'secondary' : 'primary'}>
+            <Save size={13} /> {icsSaved ? 'Opgeslagen' : 'Opslaan'}
+          </Button>
+        </div>
+        <p style={{ fontSize: '11px', color: '#9ca3af', marginTop: '6px' }}>
+          Opgeslagen per locatie. Gastenaantallen vul je daarna handmatig aan per geïmporteerde slot.
+        </p>
+      </div>
     </Layout>
   )
 }

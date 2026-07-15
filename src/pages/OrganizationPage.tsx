@@ -10,9 +10,10 @@ import {
   getLocationRoles, upsertLocationRole,
   getDailyStaffingEvaluations, saveDailyStaffingEvaluations,
 } from '../services/supabaseService'
+import { getLocationSettings, saveLocationSettings, type LocationModules } from '../services/settingsService'
 import type { Department, LocationDepartment, LocationRole, Role } from '../types/database'
 
-type Tab = 'structuur' | 'bezetting'
+type Tab = 'structuur' | 'bezetting' | 'modules'
 type Rating = 'understaffed' | 'adequate' | 'overstaffed'
 
 export default function OrganizationPage() {
@@ -34,6 +35,8 @@ export default function OrganizationPage() {
   const [ratings, setRatings] = useState<Record<string, Rating>>({})
   const [savingEval, setSavingEval] = useState(false)
   const [evalSaved, setEvalSaved] = useState(false)
+  const [modules, setModules] = useState<LocationModules>({ voorraad: true, evenementen: true, uur_trends: true })
+  const [modulesSaved, setModulesSaved] = useState(false)
 
   useEffect(() => {
     if (!selectedCompany) return
@@ -52,6 +55,8 @@ export default function OrganizationPage() {
       setLocationRoles([])
       return
     }
+    const s = getLocationSettings(selectedLocation.id)
+    setModules(s.modules)
     Promise.all([
       getLocationDepartments(selectedLocation.id),
       getLocationRoles(selectedLocation.id),
@@ -438,6 +443,75 @@ export default function OrganizationPage() {
     )
   }
 
+  const MODULE_LABELS: Record<keyof LocationModules, { label: string; desc: string }> = {
+    voorraad: { label: 'Voorraad & bestellen', desc: 'Productcatalogus, bestelflow en leverancierscommunicatie.' },
+    evenementen: { label: 'Evenementen', desc: 'Evenementenkalender met automatische doorwerking in forecast en bezettingsadvies.' },
+    uur_trends: { label: 'Uur-trends productmix', desc: 'Uurpatroon per productcategorie op de Performance-pagina.' },
+  }
+
+  function handleToggleModule(key: keyof LocationModules) {
+    if (!selectedLocation) return
+    const next = { ...modules, [key]: !modules[key] }
+    setModules(next)
+    const s = getLocationSettings(selectedLocation.id)
+    saveLocationSettings(selectedLocation.id, { ...s, modules: next })
+    setModulesSaved(true)
+    setTimeout(() => setModulesSaved(false), 2000)
+  }
+
+  const renderModules = () => {
+    if (!selectedLocation) {
+      return (
+        <div className="text-center py-12 text-slate-400 text-sm">
+          Selecteer een locatie om modules in te stellen.
+        </div>
+      )
+    }
+    return (
+      <div>
+        <p className="text-sm text-slate-500 mb-6">
+          Schakel modules per locatie aan of uit. Uitgeschakelde modules verdwijnen uit de navigatie.
+        </p>
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          {(Object.keys(MODULE_LABELS) as (keyof LocationModules)[]).map((key, idx) => {
+            const { label, desc } = MODULE_LABELS[key]
+            const on = modules[key]
+            return (
+              <div
+                key={key}
+                className={`flex items-center gap-4 px-5 py-4 ${idx > 0 ? 'border-t border-slate-100' : ''}`}
+              >
+                <div style={{ flex: 1 }}>
+                  <p className="text-sm font-medium text-slate-900">{label}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
+                </div>
+                <button
+                  onClick={() => handleToggleModule(key)}
+                  style={{
+                    width: '44px', height: '24px', borderRadius: '99px',
+                    background: on ? '#1a44e8' : '#d1d5db',
+                    border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
+                    flexShrink: 0,
+                  }}
+                >
+                  <span style={{
+                    position: 'absolute', top: '3px',
+                    left: on ? '23px' : '3px',
+                    width: '18px', height: '18px', borderRadius: '50%',
+                    background: 'white', transition: 'left 0.2s',
+                  }} />
+                </button>
+              </div>
+            )
+          })}
+        </div>
+        {modulesSaved && (
+          <p className="text-sm text-green-600 font-medium mt-3">Wijzigingen opgeslagen.</p>
+        )}
+      </div>
+    )
+  }
+
   return (
     <Layout>
       <div className="flex items-center justify-between mb-6">
@@ -448,7 +522,7 @@ export default function OrganizationPage() {
       </div>
 
       <div className="flex gap-1 mb-6 bg-slate-100 rounded-xl p-1 w-fit">
-        {(['structuur', 'bezetting'] as Tab[]).map(tab => (
+        {(['structuur', 'bezetting', 'modules'] as Tab[]).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -459,13 +533,14 @@ export default function OrganizationPage() {
                 : 'text-slate-500 hover:text-slate-700',
             ].join(' ')}
           >
-            {tab === 'structuur' ? 'Structuur' : 'Bezetting evaluatie'}
+            {tab === 'structuur' ? 'Structuur' : tab === 'bezetting' ? 'Bezetting evaluatie' : 'Modules'}
           </button>
         ))}
       </div>
 
       {activeTab === 'structuur' && renderStructuur()}
       {activeTab === 'bezetting' && renderBezetting()}
+      {activeTab === 'modules' && renderModules()}
     </Layout>
   )
 }

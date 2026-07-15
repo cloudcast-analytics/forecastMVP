@@ -16,27 +16,33 @@ import {
 import Sidebar from './Sidebar'
 import Cloudy from '../cloudy/Cloudy'
 import { useApp } from '../../context/AppContext'
+import { getLocationSettings } from '../../services/settingsService'
 
 interface LayoutProps {
   children: React.ReactNode
 }
 
 const allNavItems = [
-  { to: '/dashboard',    label: 'Dashboard',       icon: LayoutDashboard, adminOnly: false },
-  { to: '/forecast',     label: 'Forecast',         icon: TrendingUp,      adminOnly: false },
-  { to: '/performance',  label: 'Performance',      icon: BarChart2,       adminOnly: false },
-  { to: '/voorraad',     label: 'Voorraad',         icon: Package,         adminOnly: false },
-  { to: '/evenementen',  label: 'Evenementen',      icon: Calendar,        adminOnly: false },
-  { to: '/staffing',     label: 'Personeelsregels', icon: Users,           adminOnly: false },
-  { to: '/organization', label: 'Organisatie',      icon: Building,        adminOnly: false },
-  { to: '/data',         label: 'Data beheer',      icon: Settings,        adminOnly: false },
+  { to: '/dashboard',    label: 'Dashboard',       icon: LayoutDashboard, adminOnly: false, moduleKey: undefined },
+  { to: '/forecast',     label: 'Forecast',         icon: TrendingUp,      adminOnly: false, moduleKey: undefined },
+  { to: '/performance',  label: 'Performance',      icon: BarChart2,       adminOnly: false, moduleKey: undefined },
+  { to: '/voorraad',     label: 'Voorraad',         icon: Package,         adminOnly: false, moduleKey: 'voorraad' as const },
+  { to: '/evenementen',  label: 'Evenementen',      icon: Calendar,        adminOnly: false, moduleKey: 'evenementen' as const },
+  { to: '/staffing',     label: 'Personeelsregels', icon: Users,           adminOnly: false, moduleKey: undefined },
+  { to: '/organization', label: 'Organisatie',      icon: Building,        adminOnly: false, moduleKey: undefined },
+  { to: '/data',         label: 'Data beheer',      icon: Settings,        adminOnly: false, moduleKey: undefined },
 ]
 
 export default function Layout({ children }: LayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const { selectedCompany, selectedLocation, setSelectedLocation, locations, logout, currentUser, isDemo, role, demoViewRole, setDemoViewRole } = useApp()
   const navigate = useNavigate()
-  const navItems = allNavItems.filter(item => !item.adminOnly || role === 'admin')
+  const modules = getLocationSettings(selectedLocation?.id ?? 'default').modules
+  const navItems = allNavItems.filter(item => {
+    if (item.adminOnly && role !== 'admin') return false
+    if (item.moduleKey && !modules[item.moduleKey]) return false
+    return true
+  })
 
   async function handleLogout() {
     await logout()

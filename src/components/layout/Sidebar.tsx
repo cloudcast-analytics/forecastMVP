@@ -13,16 +13,17 @@ import {
   Menu,
 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
+import { getLocationSettings } from '../../services/settingsService'
 
 const allNavItems = [
-  { to: '/dashboard',    label: 'Dashboard',        icon: LayoutDashboard, adminOnly: false, end: true },
-  { to: '/forecast',     label: 'Forecast',          icon: TrendingUp,      adminOnly: false, end: true },
-  { to: '/performance',  label: 'Performance',       icon: BarChart2,       adminOnly: false, end: true },
-  { to: '/voorraad',     label: 'Voorraad',          icon: Package,         adminOnly: false, end: true },
-  { to: '/evenementen',  label: 'Evenementen',       icon: Calendar,        adminOnly: false, end: true },
-  { to: '/staffing',     label: 'Personeelsregels',  icon: Users,           adminOnly: false, end: true },
-  { to: '/organization', label: 'Organisatie',       icon: Building,        adminOnly: false, end: true },
-  { to: '/data',         label: 'Data beheer',       icon: Settings,        adminOnly: false, end: true },
+  { to: '/dashboard',    label: 'Dashboard',        icon: LayoutDashboard, adminOnly: false, end: true, moduleKey: undefined },
+  { to: '/forecast',     label: 'Forecast',          icon: TrendingUp,      adminOnly: false, end: true, moduleKey: undefined },
+  { to: '/performance',  label: 'Performance',       icon: BarChart2,       adminOnly: false, end: true, moduleKey: undefined },
+  { to: '/voorraad',     label: 'Voorraad',          icon: Package,         adminOnly: false, end: true, moduleKey: 'voorraad' as const },
+  { to: '/evenementen',  label: 'Evenementen',       icon: Calendar,        adminOnly: false, end: true, moduleKey: 'evenementen' as const },
+  { to: '/staffing',     label: 'Personeelsregels',  icon: Users,           adminOnly: false, end: true, moduleKey: undefined },
+  { to: '/organization', label: 'Organisatie',       icon: Building,        adminOnly: false, end: true, moduleKey: undefined },
+  { to: '/data',         label: 'Data beheer',       icon: Settings,        adminOnly: false, end: true, moduleKey: undefined },
 ]
 
 export default function Sidebar() {
@@ -30,7 +31,12 @@ export default function Sidebar() {
     selectedCompany, selectedLocation, setSelectedLocation, locations,
     logout, currentUser, isDemo, role, demoViewRole, setDemoViewRole,
   } = useApp()
-  const navItems = allNavItems.filter(item => !item.adminOnly || role === 'admin')
+  const modules = getLocationSettings(selectedLocation?.id ?? 'default').modules
+  const navItems = allNavItems.filter(item => {
+    if (item.adminOnly && role !== 'admin') return false
+    if (item.moduleKey && !modules[item.moduleKey]) return false
+    return true
+  })
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar-collapsed') === 'true')
 
