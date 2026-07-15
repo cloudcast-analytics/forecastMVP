@@ -1,6 +1,7 @@
 ﻿import type { Company, DailyObservation, Department, DailyStaffingEvaluation, Location, LocationDepartment, LocationRole, Role } from '../types/database'
 import type { DepartmentStaffingRule } from '../types/staffing'
 import type { Order, Product, SupplierConfig } from '../types/inventory'
+import type { Evenement } from '../types/events'
 import { getWeekNumber, getSeason } from '../lib/utils'
 import { isPublicHoliday, isSchoolHoliday } from '../lib/calendar'
 import { computeStaffing, getDemandLevel } from '../services/staffingService'
@@ -230,4 +231,36 @@ export function getDemoObservations(locationId = 'demo-location'): DailyObservat
     }
   })
 }
+
+export const DEMO_EVENTS: Evenement[] = [
+  {
+    id: 'event-demo-1',
+    location_id: 'demo-location',
+    date: '2026-07-19',
+    name: 'Zomerfeest Limburg',
+    expected_guests: 300,
+    department_id: 'dept-bar-buiten',
+    type: 'Feest',
+    note: 'Afgesloten terras, decoratie aanwezig',
+  },
+  {
+    id: 'event-demo-2',
+    location_id: 'demo-location',
+    date: '2026-07-26',
+    name: 'Beach volleyball toernooi',
+    expected_guests: 200,
+    department_id: 'dept-bar-buiten',
+    type: 'Sport',
+  },
+  {
+    id: 'event-demo-3',
+    location_id: 'demo-location',
+    date: '2026-08-02',
+    name: 'Muzieknacht Waterfront',
+    expected_guests: 260,
+    department_id: 'dept-bar-binnen',
+    type: 'Concert',
+    note: 'Samenwerking met lokale dj-collectief',
+  },
+]
 

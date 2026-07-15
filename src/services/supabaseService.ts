@@ -2,11 +2,13 @@
 import type { Company, DailyObservation, Department, DailyStaffingEvaluation, Location, LocationDepartment, LocationRole, Role, UploadedFile } from '../types/database'
 import type { DepartmentStaffingRule } from '../types/staffing'
 import type { Order, Product, SupplierConfig as InventorySupplierConfig } from '../types/inventory'
+import type { Evenement, HourlySale } from '../types/events'
 import {
   DEMO_COMPANY,
   DEMO_DEPARTMENT_STAFFING_RULES,
   DEMO_DEPARTMENT_STAFFING_RULES_2,
   DEMO_DEPARTMENTS,
+  DEMO_EVENTS,
   DEMO_LOCATION_DEPARTMENTS,
   DEMO_LOCATION_DEPARTMENTS_2,
   DEMO_LOCATION_ROLES,
@@ -139,6 +141,11 @@ const demoStores = {
     'demo-location': [...DEMO_ORDERS],
     'demo-location-2': [],
   } as Record<string, Order[]>,
+  events: {
+    'demo-location': [...DEMO_EVENTS],
+    'demo-location-2': [],
+  } as Record<string, Evenement[]>,
+  hourlySales: {} as Record<string, HourlySale[]>,
 }
 
 export async function getCompanies(): Promise<Company[]> {
@@ -495,5 +502,68 @@ export async function upsertOrder(order: Order): Promise<void> {
     const { error: lineErr } = await supabase.from('order_lines').upsert({ ...line, order_id: order.id }, { onConflict: 'order_id,product_id' })
     if (lineErr) throw lineErr
   }
+}
+
+// ─── Evenementen ──────────────────────────────────────────────────────────────
+
+export async function getEvents(locationId: string): Promise<Evenement[]> {
+  if (isDemo) return [...(demoStores.events[locationId] ?? [])]
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('location_id', locationId)
+    .order('date')
+  if (error) throw error
+  return data as Evenement[]
+}
+
+export async function upsertEvent(event: Evenement): Promise<void> {
+  if (isDemo) {
+    const store = demoStores.events[event.location_id] ?? []
+    const idx = store.findIndex(e => e.id === event.id)
+    if (idx >= 0) store[idx] = event
+    else store.push(event)
+    demoStores.events[event.location_id] = store
+    return
+  }
+  const { error } = await supabase.from('events').upsert(event, { onConflict: 'id' })
+  if (error) throw error
+}
+
+export async function deleteEvent(id: string, locationId: string): Promise<void> {
+  if (isDemo) {
+    demoStores.events[locationId] = (demoStores.events[locationId] ?? []).filter(e => e.id !== id)
+    return
+  }
+  const { error } = await supabase.from('events').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ─── Hourly sales ─────────────────────────────────────────────────────────────
+
+export async function getHourlySales(locationId: string): Promise<HourlySale[]> {
+  if (isDemo) return demoStores.hourlySales[locationId] ?? []
+  const { data, error } = await supabase
+    .from('hourly_sales')
+    .select('*')
+    .eq('location_id', locationId)
+    .order('date')
+    .order('hour')
+  if (error) throw error
+  return data as HourlySale[]
+}
+
+export async function upsertHourlySales(sales: HourlySale[]): Promise<void> {
+  if (!sales.length) return
+  const locationId = sales[0].location_id
+  if (isDemo) {
+    const existing = demoStores.hourlySales[locationId] ?? []
+    const byKey = new Map(existing.map(s => [`${s.date}-${s.hour}-${s.category}`, s]))
+    for (const s of sales) byKey.set(`${s.date}-${s.hour}-${s.category}`, s)
+    demoStores.hourlySales[locationId] = [...byKey.values()]
+    return
+  }
+  const { error } = await supabase.from('hourly_sales').upsert(sales, { onConflict: 'location_id,date,hour,category' })
+  if (error) throw error
 }
 

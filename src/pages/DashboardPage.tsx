@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 import Layout from '../components/layout/Layout'
 import { useApp } from '../context/AppContext'
-import { getDepartmentStaffingRules, getObservations, getOrders, getProducts } from '../services/supabaseService'
+import { getDepartmentStaffingRules, getEvents, getObservations, getOrders, getProducts } from '../services/supabaseService'
 import { generateForecast } from '../services/forecastService'
 import { computeStaffing, getDemandLevel, maxStaffing } from '../services/staffingService'
 import { getLocationSettings } from '../services/settingsService'
@@ -15,6 +15,7 @@ import type { DailyObservation } from '../types/database'
 import type { DepartmentStaffingRule } from '../types/staffing'
 import type { ForecastDay } from '../types/forecast'
 import type { Order, Product } from '../types/inventory'
+import type { Evenement } from '../types/events'
 import { formatEuro } from '../lib/utils'
 
 const HOURLY_PATTERN = [
@@ -89,6 +90,7 @@ export default function DashboardPage() {
   const [weekForecast, setWeekForecast] = useState<ForecastDay[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [pendingOrder, setPendingOrder] = useState<Order | null>(null)
+  const [events, setEvents] = useState<Evenement[]>([])
   const [loading, setLoading] = useState(true)
   const [now, setNow] = useState(new Date())
 
@@ -105,11 +107,13 @@ export default function DashboardPage() {
       getDepartmentStaffingRules(selectedLocation.id),
       getProducts(selectedLocation.id),
       getOrders(selectedLocation.id),
-    ]).then(([obs, deptRules, prods, orders]) => {
+      getEvents(selectedLocation.id),
+    ]).then(([obs, deptRules, prods, orders, evts]) => {
       setObservations(obs.filter(o => !o.deleted_at))
       setRules(deptRules)
       setProducts(prods)
       setPendingOrder(orders.find(o => o.status === 'voorstel' || o.status === 'goedgekeurd') ?? null)
+      setEvents(evts)
       setLoading(false)
     })
   }, [selectedLocation])
@@ -119,10 +123,10 @@ export default function DashboardPage() {
       setWeekForecast([])
       return
     }
-    generateForecast(observations, 7, rules, selectedLocation?.id ?? 'x', selectedLocation?.city ?? 'Genk')
+    generateForecast(observations, 7, rules, selectedLocation?.id ?? 'x', selectedLocation?.city ?? 'Genk', events)
       .then(setWeekForecast)
       .catch(() => setWeekForecast([]))
-  }, [observations, rules, selectedLocation])
+  }, [observations, rules, selectedLocation, events])
 
   const today = useMemo(() => new Date().toISOString().split('T')[0], [])
   const todayWeather = useMemo(() => getMockWeather(selectedLocation?.id ?? 'x', [today])[0], [selectedLocation, today])

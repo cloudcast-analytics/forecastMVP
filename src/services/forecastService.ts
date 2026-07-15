@@ -1,6 +1,7 @@
 ﻿import type { DailyObservation } from '../types/database'
 import type { ForecastDay } from '../types/forecast'
 import type { DepartmentStaffingRule } from '../types/staffing'
+import type { Evenement } from '../types/events'
 import { getSeason } from '../lib/utils'
 import { getMockWeather } from './weatherService'
 import { isPublicHoliday, isSchoolHoliday } from '../lib/calendar'
@@ -50,6 +51,7 @@ function generateForecastClientSide(
   horizonDays: number,
   deptRules: DepartmentStaffingRule[],
   locationId: string,
+  events: Evenement[] = [],
 ): ForecastDay[] {
   const byDow: Record<number, { revenues: number[]; visitors: number[] }> = {}
   for (let i = 0; i < 7; i++) byDow[i] = { revenues: [], visitors: [] }
@@ -127,10 +129,18 @@ function generateForecastClientSide(
     else if (season === 'winter') reasons.push('Winterseizoen')
     if (isWeekend) reasons.push('Weekend')
 
+    const event = events.find(e => e.date === dateStr)
+    if (event) {
+      const avgRevPerVisitor = overallAvgRevenue > 0 && visitors > 0 ? revenue / visitors : 12
+      visitors += event.expected_guests
+      revenue += event.expected_guests * avgRevPerVisitor
+      reasons.unshift(`Evenement: ${event.name}`)
+    }
+
     const predicted_revenue = Math.round(revenue)
     const predicted_visitors = Math.round(visitors)
     const demand_level = getDemandLevel(predicted_revenue, overallAvgRevenue)
-    const advice = computeStaffing(deptRules, demand_level)
+    const advice = computeStaffing(deptRules, demand_level, event?.expected_guests)
 
     return {
       forecast_date: dateStr,
@@ -152,6 +162,7 @@ export async function generateForecast(
   deptRules: DepartmentStaffingRule[],
   locationId: string,
   locationCity = 'Genk',
+  events: Evenement[] = [],
 ): Promise<ForecastDay[]> {
   if (BACKEND_URL && observations.length >= 60) {
     try {
@@ -174,6 +185,6 @@ export async function generateForecast(
     }
   }
 
-  return generateForecastClientSide(observations, horizonDays, deptRules, locationId)
+  return generateForecastClientSide(observations, horizonDays, deptRules, locationId, events)
 }
 

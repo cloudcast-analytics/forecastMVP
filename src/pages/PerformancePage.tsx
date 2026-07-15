@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { TrendingUp, TrendingDown, Euro, Users, Award } from 'lucide-react'
+import { TrendingUp, TrendingDown, Euro, Users, Award, Clock } from 'lucide-react'
 import Layout from '../components/layout/Layout'
 import { useApp } from '../context/AppContext'
 import { getObservations } from '../services/supabaseService'
@@ -8,7 +8,49 @@ import type { DailyObservation } from '../types/database'
 import { formatEuro } from '../lib/utils'
 
 type Period = '7d' | '30d' | '90d' | 'year'
-type View = 'omzet' | 'bezoekers'
+type View = 'omzet' | 'bezoekers' | 'uur-trends'
+
+// Uurpatroon (relatief, som = 1)
+const HOURLY_PATTERN = [
+  { hour: 10, pct: 0.04 }, { hour: 11, pct: 0.07 }, { hour: 12, pct: 0.13 },
+  { hour: 13, pct: 0.15 }, { hour: 14, pct: 0.10 }, { hour: 15, pct: 0.09 },
+  { hour: 16, pct: 0.11 }, { hour: 17, pct: 0.10 }, { hour: 18, pct: 0.09 },
+  { hour: 19, pct: 0.07 }, { hour: 20, pct: 0.04 }, { hour: 21, pct: 0.02 },
+]
+const TOTAL_PCT = HOURLY_PATTERN.reduce((s, h) => s + h.pct, 0)
+
+// Productcategorie-verdeling per uur (som per uur = 1)
+const CAT_DIST: Record<number, [string, number][]> = {
+  10: [['Frisdrank', 0.60], ['Bier', 0.30], ['Overig', 0.10]],
+  11: [['Frisdrank', 0.50], ['Bier', 0.38], ['Overig', 0.12]],
+  12: [['Frisdrank', 0.38], ['Bier', 0.44], ['Wijn', 0.10], ['Overig', 0.08]],
+  13: [['Frisdrank', 0.32], ['Bier', 0.48], ['Wijn', 0.12], ['Overig', 0.08]],
+  14: [['Frisdrank', 0.26], ['Bier', 0.50], ['Wijn', 0.14], ['Cocktail', 0.05], ['Overig', 0.05]],
+  15: [['Frisdrank', 0.20], ['Bier', 0.53], ['Wijn', 0.14], ['Cocktail', 0.08], ['Overig', 0.05]],
+  16: [['Frisdrank', 0.17], ['Bier', 0.50], ['Wijn', 0.16], ['Cocktail', 0.12], ['Overig', 0.05]],
+  17: [['Frisdrank', 0.14], ['Bier', 0.46], ['Wijn', 0.19], ['Cocktail', 0.17], ['Overig', 0.04]],
+  18: [['Frisdrank', 0.11], ['Bier', 0.40], ['Wijn', 0.25], ['Cocktail', 0.20], ['Overig', 0.04]],
+  19: [['Frisdrank', 0.10], ['Bier', 0.36], ['Wijn', 0.28], ['Cocktail', 0.22], ['Overig', 0.04]],
+  20: [['Frisdrank', 0.10], ['Bier', 0.30], ['Wijn', 0.29], ['Cocktail', 0.28], ['Overig', 0.03]],
+  21: [['Frisdrank', 0.08], ['Bier', 0.24], ['Wijn', 0.30], ['Cocktail', 0.35], ['Overig', 0.03]],
+}
+const CAT_COLORS: Record<string, string> = {
+  Bier: '#1a44e8', Wijn: '#7c3aed', Frisdrank: '#0891b2', Cocktail: '#ea580c', Overig: '#9ca3af',
+}
+
+function computeHourlyMix(obs: DailyObservation[]): Record<string, number | string>[] {
+  const avgRev = obs.length > 0
+    ? obs.reduce((s, o) => s + (o.revenue ?? 0), 0) / obs.length
+    : 5000
+  return HOURLY_PATTERN.map(({ hour, pct }) => {
+    const hourRev = avgRev * (pct / TOTAL_PCT)
+    const row: Record<string, number | string> = { hour: `${hour}u` }
+    for (const [cat, share] of (CAT_DIST[hour] ?? [['Overig', 1]])) {
+      row[cat] = Math.round(hourRev * share)
+    }
+    return row
+  })
+}
 
 const PERIOD_DAYS: Record<Period, number> = { '7d': 7, '30d': 30, '90d': 90, 'year': 365 }
 const PERIOD_LABEL: Record<Period, string> = { '7d': 'Afgelopen 7 dagen', '30d': 'Afgelopen 30 dagen', '90d': 'Afgelopen kwartaal', 'year': 'Afgelopen jaar' }
@@ -229,19 +271,64 @@ export default function PerformancePage() {
 
           {/* View toggle */}
           <div style={{ display: 'flex', gap: '4px', marginBottom: '16px' }}>
-            {(['omzet', 'bezoekers'] as View[]).map(v => (
-              <button key={v} onClick={() => setView(v)} style={{
+            {([
+              { key: 'omzet', label: 'Omzet' },
+              { key: 'bezoekers', label: 'Bezoekers' },
+              { key: 'uur-trends', label: 'Uur-trends', icon: true },
+            ] as { key: View; label: string; icon?: boolean }[]).map(({ key, label, icon }) => (
+              <button key={key} onClick={() => setView(key)} style={{
+                display: 'flex', alignItems: 'center', gap: '5px',
                 padding: '6px 16px', borderRadius: '8px', border: '1px solid rgba(26,68,232,0.2)',
-                cursor: 'pointer', fontSize: '13px', fontWeight: view === v ? 600 : 400,
-                background: view === v ? 'rgba(26,68,232,0.08)' : 'transparent',
-                color: view === v ? '#1a44e8' : '#6b7280',
+                cursor: 'pointer', fontSize: '13px', fontWeight: view === key ? 600 : 400,
+                background: view === key ? 'rgba(26,68,232,0.08)' : 'transparent',
+                color: view === key ? '#1a44e8' : '#6b7280',
               }}>
-                {v.charAt(0).toUpperCase() + v.slice(1)}
+                {icon && <Clock size={12} />}
+                {label}
               </button>
             ))}
           </div>
 
-          {/* Main chart */}
+          {/* Uur-trends chart */}
+          {view === 'uur-trends' && (() => {
+            const hourlyData = computeHourlyMix(current)
+            const categories = ['Bier', 'Wijn', 'Frisdrank', 'Cocktail', 'Overig']
+            return (
+              <div style={{
+                background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.4)', borderRadius: '16px', padding: '20px 16px 12px', marginBottom: '20px',
+              }}>
+                <p style={{ fontSize: '13px', fontWeight: 600, color: '#1a1f36', marginBottom: '4px', paddingLeft: '4px' }}>
+                  Productmix per uur
+                </p>
+                <p style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '16px', paddingLeft: '4px' }}>
+                  Schatting op basis van dagdata + uurpatroon — importeer uurdata voor exacte cijfers
+                </p>
+                <ResponsiveContainer width="100%" height={240}>
+                  <BarChart data={hourlyData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
+                    <XAxis dataKey="hour" tick={{ fontSize: 11, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} tickLine={false} axisLine={false}
+                      tickFormatter={v => `€${(v/1000).toFixed(0)}k`} width={40} />
+                    <Tooltip
+                      formatter={(val, name) => [formatEuro(Number(val)), String(name)]}
+                      contentStyle={{ fontSize: 12, borderRadius: 10, border: '1px solid rgba(0,0,0,0.08)' }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    {categories.map((cat, i) => (
+                      <Bar key={cat} dataKey={cat} stackId="a" fill={CAT_COLORS[cat]}
+                        radius={i === categories.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                        fillOpacity={0.85}
+                      />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )
+          })()}
+
+          {/* Main chart (omzet / bezoekers) */}
+          {view !== 'uur-trends' && (
           <div style={{
             background: 'rgba(255,255,255,0.65)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
             border: '1px solid rgba(255,255,255,0.4)', borderRadius: '16px', padding: '20px 16px 12px', marginBottom: '20px',
@@ -269,6 +356,7 @@ export default function PerformancePage() {
               </LineChart>
             </ResponsiveContainer>
           </div>
+          )}
 
           {/* Weather correlation */}
           {weatherCorr.length > 1 && (

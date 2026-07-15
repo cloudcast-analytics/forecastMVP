@@ -8,7 +8,7 @@ import Layout from '../components/layout/Layout'
 import Button from '../components/ui/Button'
 import { useApp } from '../context/AppContext'
 import {
-  deleteProduct, getDepartmentStaffingRules, getInventorySupplierConfig,
+  deleteProduct, getDepartmentStaffingRules, getEvents, getInventorySupplierConfig,
   getObservations, getOrders, getProducts,
   updateProductStock, upsertInventorySupplierConfig, upsertOrder, upsertProduct,
 } from '../services/supabaseService'
@@ -652,15 +652,16 @@ export default function VoorraadPage() {
   const loadData = useCallback(async () => {
     if (!selectedLocation) return
     setLoading(true)
-    const [prods, obs, rules] = await Promise.all([
+    const [prods, obs, rules, evts] = await Promise.all([
       getProducts(selectedLocation.id),
       getObservations(selectedLocation.id),
       getDepartmentStaffingRules(selectedLocation.id),
+      getEvents(selectedLocation.id),
     ])
     setProducts(prods)
     setObservations(obs)
     setSettings(getLocationSettings(selectedLocation.id))
-    generateForecast(obs, 14, rules, selectedLocation.id).then(setForecast)
+    generateForecast(obs, 14, rules, selectedLocation.id, 'Genk', evts).then(setForecast)
     setLoading(false)
   }, [selectedLocation])
 

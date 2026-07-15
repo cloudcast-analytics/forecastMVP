@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   Building,
+  Calendar,
   TrendingUp,
   BarChart2,
   Package,
@@ -18,6 +19,7 @@ const allNavItems = [
   { to: '/forecast',     label: 'Forecast',          icon: TrendingUp,      adminOnly: false, end: true },
   { to: '/performance',  label: 'Performance',       icon: BarChart2,       adminOnly: false, end: true },
   { to: '/voorraad',     label: 'Voorraad',          icon: Package,         adminOnly: false, end: true },
+  { to: '/evenementen',  label: 'Evenementen',       icon: Calendar,        adminOnly: false, end: true },
   { to: '/staffing',     label: 'Personeelsregels',  icon: Users,           adminOnly: false, end: true },
   { to: '/organization', label: 'Organisatie',       icon: Building,        adminOnly: false, end: true },
   { to: '/data',         label: 'Data beheer',       icon: Settings,        adminOnly: false, end: true },
